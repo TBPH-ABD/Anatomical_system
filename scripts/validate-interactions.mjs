@@ -39,3 +39,31 @@ tap.down(1,10,10,5);tap.cancel(1);assert.equal(tap.up(1,10,10),false);
 tap.down(1,10,10,5);assert.equal(tap.up(1,10,10),true);
 assert.equal(createExplosionLayout([]).cells.size,0);
 console.log('Tap, drag, multitouch, cancellation, and empty-view checks passed.');
+
+// Shared links: the query must survive a round trip, and a damaged one must
+// degrade to defaults rather than throwing at the scene.
+const {encodeShareState, decodeShareState} = await import('../lib/share-state.ts');
+const pose = {position: [1.4, 1.05, 3.6], target: [0, 0.85, 0]};
+const sent = {visible: ['skeletal', 'muscular'], selected: ['FJ1252'], isolate: true, explode: 0.42, view: 'front', concept: 'FMA7310', camera: pose};
+const back = decodeShareState(encodeShareState(sent));
+assert.deepEqual(back.visible, sent.visible);
+assert.deepEqual(back.selected, sent.selected);
+assert.equal(back.concept, sent.concept);
+assert.equal(back.isolate, true);
+assert.equal(back.view, 'front');
+assert.ok(Math.abs(back.explode - sent.explode) < 1e-6);
+assert.deepEqual(back.camera, pose);
+assert.equal(decodeShareState(''), null);
+assert.equal(decodeShareState('?unrelated=1'), null);
+assert.equal(decodeShareState('cam=1_2_3').camera, undefined);
+assert.equal(decodeShareState('cam=a_b_c_d_e_f').camera, undefined);
+assert.equal(decodeShareState('x=99').explode, 1);
+
+// Arabic search normalisation: hamza, tāʾ marbūṭa and diacritics must not
+// prevent a match, or the Arabic index is useless in practice.
+const {normalizeTerm} = await import('../lib/anatomy-terms.ts');
+assert.equal(normalizeTerm('الرِّئَة'), normalizeTerm('الرئه'));
+assert.equal(normalizeTerm('الأبهر'), normalizeTerm('الابهر'));
+assert.equal(normalizeTerm('اليُمنى'), normalizeTerm('اليمني'));
+assert.equal(normalizeTerm('  Left   Lung '), 'left lung');
+console.log('Share links and Arabic search normalisation passed.');

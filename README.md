@@ -1,6 +1,8 @@
-# Human Atlas
+# Human Atlas — أطلس جسم الإنسان
 
-An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui. Take the BodyParts3D adult male reference apart into **2,234 individually selectable meshes**, explore **15 anatomical systems**, and search **3,432 named concepts**.
+An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui, with a **complete Arabic interface (RTL) and Arabic anatomical terminology** for medical students. Take the BodyParts3D adult male reference apart into **2,234 individually selectable meshes**, explore **15 anatomical systems**, and search **3,432 named concepts** in Arabic, English, or Latin.
+
+نظام تشريح ثلاثي الأبعاد — مساعد لطلاب الطب البشري في جامعة العلوم والتكنولوجيا. مقدم من د. سمية عبد الله عبد، بمساعدة أخيها المهندس صلاح عبد الله عبد.
 
 **[Explore the live demo](https://human-atlas-seven.vercel.app)**
 
@@ -12,6 +14,31 @@ An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui. Ta
 - Search anatomical names and source identifiers.
 - Isolate a selected structure and read its details.
 - Use compact controls and detail panels on mobile.
+
+## Study tools
+
+- **Quiz mode** hides the name and asks you to find the structure on the model, scoring answers and streaks. The question pool can be the visible systems, your favorites, or the whole atlas.
+- **Flashcards** for any structure, kept in the browser and exportable as CSV or as a tab-separated file that Anki imports directly. Both the Arabic and English names travel with each card.
+- **Labels** pin the largest visible structures with leader lines that cannot cross: each side of the screen keeps its anchors in vertical order.
+- **Favorites and custom lists** (for example "امتحان الأطراف العلوية") to build a revision set.
+- **Shareable links** restore the visible systems, the selected structure, the explode amount, the camera pose, and the language.
+- **Keyboard shortcuts** (`?` lists them) and labelled controls for screen readers.
+- **Real download progress**: the 33 MB of geometry is read as a stream, so the bar reflects bytes actually received.
+
+## Arabic interface and terminology
+
+- The interface ships in Arabic (default) and English. `lib/i18n/en.ts` defines the message set; every other locale is typed against it, so a missing key fails `npm run check`. `dir`/`lang` are set on the document root and the layout uses logical CSS properties, so only the interface mirrors — the 3D scene never flips.
+- Headings use Arial; body text uses IBM Plex Sans Arabic with Noto Sans Arabic as a fallback, loaded with `font-display: swap`. Numbers stay Western Arabic (1234) to match the atlas identifiers beside them.
+- Anatomical names live in [`data/anatomy-terms-ar.json`](data/anatomy-terms-ar.json), keyed by the atlas concept or mesh identifier — never by English text — with `ar`, `en`, and where useful `la` fields.
+- Terms are built from a curated lexicon (`scripts/anatomy-lexicon.mjs`) that follows the Arabic equivalents of Terminologia Anatomica used in Arabic medical curricula. A name is translated only when every word of it is covered; **5,574 of 5,666 names (97.8% of concepts)** currently are. Anything else falls back to the English or Latin name rather than inventing one.
+- The detail panel always shows the Arabic name together with the English one (and the Latin term when available), because exams are written in English.
+- Search matches Arabic, English, and Latin at once, normalising hamza forms (أ إ آ → ا), tāʾ marbūṭa (ة → ه), alif maqṣūra, and diacritics.
+
+To rebuild the terminology after editing the lexicon:
+
+```sh
+npm run build:terms
+```
 
 ## Run locally
 
@@ -30,10 +57,11 @@ Open http://localhost:3016. To build the static site, run `npm run build`; the o
 npm run check
 node scripts/validate-atlas.mjs
 node scripts/validate-interactions.mjs
+node scripts/validate-terms.mjs
 npm run build
 ```
 
-Validation covers mesh buffers, names and concept membership, nonoverlapping exploded layouts at desktop and mobile aspect ratios, search and inspection contracts, and tap-versus-drag handling. Browser interaction checks have exercised selection, system controls, search, isolation, rotation, and 390×844, 320×568, and 844×390 layouts. Phone controls stay clear of the exploded inventory, and isolated structures fit the space above or beside the detail panel. Physical-device performance and real multitouch hardware have not been tested.
+Validation covers mesh buffers, names and concept membership, nonoverlapping exploded layouts at desktop and mobile aspect ratios, search and inspection contracts, tap-versus-drag handling, share-link round trips, Arabic search normalisation, and the terminology file (every key is a real atlas identifier, every Arabic term is Arabic script, the published copy matches the source, and coverage stays above 95%). Browser interaction checks have exercised selection, system controls, search, isolation, rotation, and 390×844, 320×568, and 844×390 layouts. Phone controls stay clear of the exploded inventory, and isolated structures fit the space above or beside the detail panel. Physical-device performance and real multitouch hardware have not been tested.
 
 ## Anatomy data
 
@@ -49,6 +77,8 @@ Geometry is merged into batches. Per-structure GPU textures control translation,
 
 The optional WebMCP tools expose anatomy search and inspection in compatible browsers. The visible interface works without them.
 
+Labels and quiz mode read from the same per-structure state textures the renderer already maintains; label positions are projected in the existing render pass, so neither the batched rendering nor the GPU picking path changes.
+
 ## Rebuilding geometry
 
 The repository includes browser-ready geometry. Rebuilding it is optional: obtain the official BodyParts3D OBJ archive and English metadata tables, prepare the joined concepts and display-system mappings, run `scripts/convert-anatomy.py`, then `node scripts/optimize-anatomy.mjs` and `node scripts/compress-models.mjs`. Simplification uses a 0.2% relative error limit per structure.
@@ -59,6 +89,6 @@ Import this repository into Vercel as a Vite project. The included `vercel.json`
 
 ## License
 
-Original application code is released under the [MIT License](LICENSE). **The anatomy data has its own CC BY 4.0 license**; preserve the attribution when redistributing it. Third-party dependencies retain their respective licenses.
+Original application code and the Arabic terminology layer are released under the [MIT License](LICENSE). **The anatomy data has its own CC BY 4.0 license**; preserve the attribution when redistributing it. Third-party dependencies retain their respective licenses.
 
 Issues and pull requests are welcome. Please include reproduction steps and browser/device details for interaction problems.
