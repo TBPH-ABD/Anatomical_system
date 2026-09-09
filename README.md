@@ -1,132 +1,137 @@
-# نظام تشريح ثلاثي الأبعاد — 3D Anatomy System
+<div dir="rtl">
 
-An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui, with a **complete Arabic interface (RTL) and Arabic anatomical terminology** for medical students. Take the BodyParts3D adult male reference apart into **2,234 individually selectable meshes**, explore **15 anatomical systems**, and search **3,432 named concepts** in Arabic, English, or Latin.
+# نظام تشريح ثلاثي الأبعاد
 
-نظام تشريح ثلاثي الأبعاد — مساعد لطلاب الطب البشري في جامعة العلوم والتكنولوجيا. مقدم من د. سمية عبد الله عبد، بمساعدة أخيها المهندس صلاح عبد الله عبد.
+مستكشف تشريحي تفاعلي يعمل داخل المتصفح بواجهة عربية كاملة من اليمين إلى اليسار، مبني لطلاب الطب البشري. يفكّك النموذج المرجعي BodyParts3D إلى **2,219 قطعة مجسمة** يمكن تحديد كل واحدة منها بالنقر، موزعة على **15 جهازاً تشريحياً**، مع بحث في **3,432 مفهوماً تشريحياً** بالعربية أو الإنجليزية أو اللاتينية.
 
-**[Explore the live demo](https://human-atlas-seven.vercel.app)**
+**نظام تشريح ثلاثي الأبعاد — مساعد لطلاب الطب البشري في جامعة العلوم والتكنولوجيا**
+مقدم من د. سمية عبد الله عبد
+بمساعدة أخيها المهندس صلاح عبد الله عبد
 
-## Explore
+[English README](README.en.md) · [تجربة مباشرة](https://human-atlas-seven.vercel.app)
 
-- Orbit, zoom, and select structures directly on the body.
-- Toggle individual systems or use skeleton and organ presets.
-- Move from assembled anatomy to a spaced inventory of every visible piece.
-- Search anatomical names and source identifiers.
-- Isolate a selected structure and read its details.
-- Use compact controls and detail panels on mobile.
+---
 
-## Study tools
+## ما الذي يفعله النظام
 
-- **Quiz mode** hides the name and asks you to find the structure on the model, scoring answers and streaks. The question pool can be the visible systems, your favorites, or the whole atlas.
-- **Flashcards** for any structure, kept in the browser and exportable as CSV or as a tab-separated file that Anki imports directly. Both the Arabic and English names travel with each card.
-- **Labels** pin the largest visible structures with leader lines that cannot cross: each side of the screen keeps its anchors in vertical order.
-- **Favorites and custom lists** (for example "امتحان الأطراف العلوية") to build a revision set.
-- **Shareable links** restore the visible systems, the selected structure, the explode amount, the camera pose, and the language.
-- **Keyboard shortcuts** (`?` lists them) and labelled controls for screen readers.
-- **Explain this structure** asks Claude for a short, structured teaching explanation of the selected structure, in the language the interface is showing. Pressing it while offline only raises an alert — nothing is sent. Online, an explanation window opens over the page.
-- **Real download progress**: the 33 MB of geometry is read as a stream, so the bar reflects bytes actually received.
+- **يعرض الجسم بالكامل** ويمكن تدويره 360 درجة وتقريبه، والنقر على أي بنية لمعرفة اسمها.
+- **يظهر ويخفي الأجهزة** واحداً واحداً، أو بأزرار سريعة: الكل، الهيكل العظمي، الأعضاء.
+- **يفكّك الجسم تدريجياً** حتى تصبح كل قطعة مستقلة في جرد تشريحي مرتب.
+- **يبحث بثلاث لغات** ويطابق العربية والإنجليزية واللاتينية معاً.
+- **يعزل أي بنية** فيخفي ما حولها ويقرّب الكاميرا عليها.
+- **يعمل على الجوال** بأزرار وأشرطة مناسبة للمس.
 
-## Arabic interface and terminology
+## أدوات المذاكرة
 
-- The interface ships in Arabic (default) and English. `lib/i18n/en.ts` defines the message set; every other locale is typed against it, so a missing key fails `npm run check`. `dir`/`lang` are set on the document root and the layout uses logical CSS properties, so only the interface mirrors — the 3D scene never flips.
-- Headings use Arial; body text uses IBM Plex Sans Arabic with Noto Sans Arabic as a fallback, loaded with `font-display: swap`. Numbers stay Western Arabic (1234) to match the atlas identifiers beside them.
-- Anatomical names live in [`data/anatomy-terms-ar.json`](data/anatomy-terms-ar.json), keyed by the atlas concept or mesh identifier — never by English text — with `ar`, `en`, and where useful `la` fields.
-- Terms are built from a curated lexicon (`scripts/anatomy-lexicon.mjs`) that follows the Arabic equivalents of Terminologia Anatomica used in Arabic medical curricula. A name is translated only when every word of it is covered; **5,574 of 5,666 names (97.8% of concepts)** currently are. Anything else falls back to the English or Latin name rather than inventing one.
-- The detail panel always shows the Arabic name together with the English one (and the Latin term when available), because exams are written in English.
-- Search matches Arabic, English, and Latin at once, normalising hamza forms (أ إ آ → ا), tāʾ marbūṭa (ة → ه), alif maqṣūra, and diacritics.
+| الأداة | ماذا تفعل |
+| --- | --- |
+| **وضع الاختبار** | يخفي الاسم ويطلب منك تحديد البنية على النموذج، ويحسب النتيجة والإجابات المتتالية الصحيحة. مصدر الأسئلة: الأجهزة الظاهرة، أو المفضلة، أو الأطلس كامل. |
+| **بطاقات المراجعة** | بطاقة لكل بنية بوجهين عربي وإنجليزي، تُحفظ في المتصفح وتُصدَّر ملف CSV أو ملفاً يستورده Anki مباشرة. |
+| **العلامات** | تثبّت أسماء أكبر البنى الظاهرة على النموذج، وخطوط الإشارة مرتبة بحيث لا تتقاطع أبداً. |
+| **المفضلة والقوائم** | قوائم مذاكرة مخصصة، مثل «امتحان الأطراف العلوية». |
+| **رابط المشاركة** | يحفظ الأجهزة الظاهرة والبنية المحددة ودرجة التفكيك وزاوية الكاميرا واللغة في الرابط نفسه. |
+| **اختصارات لوحة المفاتيح** | `/` بحث · `L` الأجهزة · `N` العلامات · `Q` اختبار · `F` مفضلة · `I` عزل · `R` تدوير · `0` إعادة ضبط · `1–4` زوايا العرض · `A` المصدر والحقوق · `?` القائمة كاملة. |
 
-To rebuild the terminology after editing the lexicon:
+## الواجهة العربية والمصطلحات
+
+- الواجهة تعمل بالعربية (الافتراضية) والإنجليزية. ملف [`lib/i18n/en.ts`](lib/i18n/en.ts) هو مرجع المفاتيح، وبقية اللغات مُلزَمة به بالأنواع، فأي مفتاح ناقص يُسقط الأمر `npm run check`.
+- `dir` و`lang` مضبوطان على جذر الصفحة، والتنسيق يستخدم الخصائص المنطقية (`inset-inline-start` بدل `left`)، فتنقلب **الواجهة وحدها** ولا ينقلب المشهد ثلاثي الأبعاد إطلاقاً.
+- العناوين بخط Arial، والنصوص بخط IBM Plex Sans Arabic ويليه Noto Sans Arabic، بتحميل `font-display: swap`.
+- الأرقام عربية غربية (1234) لتتسق مع المعرّفات التقنية بجانبها.
+- الأسماء التشريحية في [`data/anatomy-terms-ar.json`](data/anatomy-terms-ar.json)، مرتبطة **بمعرّف المفهوم أو القطعة** لا بالنص الإنجليزي، وكل مدخل يحمل `ar` و`en` و`la` عند توفره.
+- المصطلحات مبنية من معجم منسّق ([`scripts/anatomy-lexicon.mjs`](scripts/anatomy-lexicon.mjs)) يتبع المقابل العربي المعتمد لـ Terminologia Anatomica في المناهج الطبية العربية. لا يُترجم الاسم إلا إذا كانت كل كلماته مغطاة: **5,574 اسماً من 5,666 (97.8% من المفاهيم)**. وما عدا ذلك يظهر باسمه الإنجليزي أو اللاتيني بدل ترجمة مخترعة.
+- لوحة التفاصيل تعرض **الاسم العربي والإنجليزي معاً دائماً**، لأن الامتحانات تُكتب بالإنجليزية.
+- البحث يطبّع الهمزات (أ إ آ ← ا) والتاء المربوطة (ة ← ه) والألف المقصورة ويحذف التشكيل.
+
+لإعادة بناء المصطلحات بعد تعديل المعجم:
 
 ```sh
 npm run build:terms
 ```
 
-## Run locally
+## التشغيل محلياً
 
-Requires Node.js 22.13 or newer. No API keys or accounts are needed.
+يتطلب Node.js 22.13 أو أحدث. لا يحتاج أي مفتاح أو حساب لتشغيل الأطلس نفسه.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open http://localhost:3016. To build the static site, run `npm run build`; the output is in `dist/`.
+ثم افتح <http://localhost:3016>. ولبناء نسخة الإنتاج: `npm run build` والمخرجات في `dist/`.
 
-## Validate
+## زر «اشرح لي هذه البنية»
+
+يطلب شرحاً تعليمياً موسّعاً للبنية المحددة بلغة الواجهة، مقسّماً إلى: ما هي، الموقع، الوظيفة، علاقتها بما حولها، ملاحظة سريرية.
+
+- إذا كان الجهاز **غير متصل بالإنترنت** يظهر تنبيه فقط ولا يُرسل أي شيء.
+- إذا كان متصلاً تفتح نافذة فوق الصفحة فيها الشرح، وتُغلق بمفتاح `Esc`.
+- المتصفح يرسل **اسم البنية فقط**؛ المفتاح يبقى على الخادم ولا يصل إلى المتصفح أبداً.
+
+المنطق مكتوب مرة واحدة في [`server/explain.ts`](server/explain.ts)، ويُقدَّم بطريقتين: دالة Vercel ([`api/explain.ts`](api/explain.ts)) في الإنتاج، ووسيط تطوير في [`vite.config.ts`](vite.config.ts) محلياً.
+
+**التفعيل** — مفتاح واحد من [openrouter.ai](https://openrouter.ai) يكفي:
+
+```sh
+cp .env.example .env      # ثم ضع المفتاح في EXPLAIN_API_KEY
+npm run dev
+```
+
+الموديلات المجانية تتشارك حصة محدودة تُرفض أحياناً بلا إنذار، لذلك يجرّب الطلب سلسلة موديلات بالترتيب حتى يرد أحدها: `nex-agi/nex-n2.5-mini:free` ثم موديلا `google/gemma-4-*:free` ثم `nex-agi/nex-n2.5-pro:free`. المتغير `EXPLAIN_MODEL` يثبّت موديلاً واحداً، و`EXPLAIN_MODELS` يحدد سلسلة خاصة بك. أي مزوّد آخر متوافق مع OpenAI يعمل بتغيير `EXPLAIN_BASE_URL` (Groq، Google AI Studio، أو Ollama محلياً).
+
+بلا مفتاح يعمل النظام كاملاً ويكتفي الزر بقول إن الخدمة غير مهيأة.
+
+للتحقق من الإعداد:
+
+```sh
+npm run test:explain      # مزوّد وهمي: نجاح، إعادة محاولة، وكل أشكال الفشل
+```
+
+> **تنبيه مهم:** الموديلات المجانية الصغيرة تكتب عربية سليمة لكنها تقع في أخطاء تشريحية حقيقية. عامل الشرح على أنه مساعدة على المراجعة، وقارنه بالمنهج الدراسي — وهذا ما يقوله السطر الظاهر أسفل كل شرح.
+
+## الفحص والتحقق
 
 ```sh
 npm run check
 node scripts/validate-atlas.mjs
 node scripts/validate-interactions.mjs
 node scripts/validate-terms.mjs
+npm run test:explain
 npm run build
 ```
 
-Validation covers mesh buffers, names and concept membership, nonoverlapping exploded layouts at desktop and mobile aspect ratios, search and inspection contracts, tap-versus-drag handling, share-link round trips, Arabic search normalisation, and the terminology file (every key is a real atlas identifier, every Arabic term is Arabic script, the published copy matches the source, and coverage stays above 95%). Browser interaction checks have exercised selection, system controls, search, isolation, rotation, and 390×844, 320×568, and 844×390 layouts. Phone controls stay clear of the exploded inventory, and isolated structures fit the space above or beside the detail panel. Physical-device performance and real multitouch hardware have not been tested.
+يغطي التحقق: ملفات المجسمات وأسماءها وانتماء كل قطعة لمفهومها، وترتيب الجرد المفكّك دون تداخل على نسب الحاسوب والجوال، وعقود البحث والفحص، والتمييز بين النقر والسحب، ورحلة روابط المشاركة، وتطبيع البحث العربي، وملف المصطلحات (كل مفتاح معرّف حقيقي، وكل مصطلح عربي بحروف عربية، والنسخة المنشورة مطابقة للمصدر، والتغطية فوق 95%)، وأخيراً نقطة الشرح كاملة بما فيها دالة Vercel.
 
-## The explain button
+## ما لا يعرضه هذا الإصدار
 
-The explanation is generated by a language model through `POST /api/explain`, implemented once in [`server/explain.ts`](server/explain.ts) and served two ways: as a Vercel function ([`api/explain.ts`](api/explain.ts)) in production, and through a dev middleware in [`vite.config.ts`](vite.config.ts) locally. The browser only ever sends the names of the selected structure; the key stays on the server.
+الأعضاء التناسلية الخارجية (القضيب وأوعيته، والخصيتان، والبربخان) مستثناة من هذا الإصدار التعليمي. قائمتها بمعرّفات BodyParts3D في [`lib/hidden-structures.ts`](lib/hidden-structures.ts) وتُفلتر وقت التشغيل، فبيانات المصدر لم تُمَس وتفريغ القائمة يعيدها.
 
-Any OpenAI-compatible provider works. The default is OpenRouter's free open-source models, so a key is all that is required:
+## مصدر البيانات التشريحية
 
-```sh
-cp .env.example .env          # then paste an openrouter.ai key into EXPLAIN_API_KEY
-npm run dev
-```
+النموذج مأخوذ من **BodyParts3D 4.0**، وهو مرجع تشريحي لذكر بالغ، برخصة **CC BY 4.0**. لا يمثل كل بنية أو تنوّع في الجسم البشري. القطعة المصدرية تختلف عن المفهوم المسمّى الذي قد يضم عدة قطع.
 
-| Provider | `EXPLAIN_BASE_URL` | Example `EXPLAIN_MODEL` |
-| --- | --- | --- |
-| OpenRouter (default) | `https://openrouter.ai/api/v1` | *(a chain of free models, see below)* |
-| Groq | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` |
-| Google AI Studio | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.0-flash` |
-| Ollama, on the same machine | `http://localhost:11434/v1` | `qwen2.5:latest` (no key) |
-| Anthropic | *(leave unset, set `ANTHROPIC_API_KEY`)* | `claude-opus-5` |
+المجسمات مبسّطة لأداء المتصفح مع الاحتفاظ بكل قطعة مصدرية: 2,288,268 مثلثاً، وحوالي 33 ميغابايت من المجسمات المضغوطة. الحقوق والروابط وتفاصيل الاقتباس كاملة في [ATTRIBUTION.md](public/ATTRIBUTION.md).
 
-Free models share an upstream pool that rate-limits without warning, so a request walks a chain of them until one answers: `nex-agi/nex-n2.5-mini:free`, then the two `google/gemma-4-*:free` models, then `nex-agi/nex-n2.5-pro:free`. `EXPLAIN_MODEL` pins a single model instead, and `EXPLAIN_MODELS` takes a comma-separated chain of your own. Any endpoint other than OpenRouter has to name its model.
+> هذا مستكشف تعليمي، وليس أداة تشخيص أو جراحة.
 
-On Vercel, set the same variables in the project's environment. Without them the rest of the viewer is unaffected — the button reports that the service is not configured. Answers are cached per structure and language for the session, and each one carries a visible note that it is AI-generated educational context, not a clinical reference.
+## كيف يعمل داخلياً
 
-Verify a configuration without opening the browser:
+تُدمج المجسمات في دفعات (batches)، وتتحكم نسائج GPU لكل بنية في الإزاحة والظهور والتحديد، بينما تدعم مجسمات المكوّنات تحديداً دقيقاً بالنقر. الجرد المفكّك يرتّب القطع الظاهرة فقط. الرسم يتحدث عند تغيّر المشهد، فيبقى التدوير سلساً دون آلاف نداءات الرسم المنفصلة.
 
-```sh
-npm run test:explain        # stub provider: success, retry, and every failure shape
-curl -s -X POST localhost:3016/api/explain -H 'content-type: application/json' \
-  -d '{"en":"left lung","ar":"الرئة اليسرى","locale":"ar"}'   # the real provider
-```
+العلامات ووضع الاختبار يقرآن من نفس نسائج الحالة التي يحتفظ بها المحرّك أصلاً، ومواضع العلامات تُسقَط داخل مسار الرسم القائم — فلا يتغير منطق الدفعات ولا مسار التحديد بالـ GPU.
 
-**Model choice matters here.** Small open models produce fluent Arabic with real anatomical mistakes; a local 7B run during development placed the left lung "beneath the lower back". Whichever model you configure, treat the explanation as revision support and check it against the course material — which is what the note under every explanation says.
+## النشر على Vercel
 
-## What this build leaves out
+استورد المستودع في Vercel كمشروع Vite. ملف `vercel.json` المرفق يضبط `npm ci` و`npm run build` ومجلد المخرجات `dist`. أضف المتغير `EXPLAIN_API_KEY` في إعدادات المشروع لتفعيل زر الشرح. يمكن أيضاً استضافته على أي خادم ملفات ثابت.
 
-External genital structures (the penis and its vessels, the testes, and the epididymides) are excluded from this teaching build. They are listed by BodyParts3D identifier in [`lib/hidden-structures.ts`](lib/hidden-structures.ts) and filtered at runtime, so the source data is untouched and emptying that list restores them.
+## العرض التقديمي
 
-## Anatomy data
+[`docs/anatomy-system-overview.pptx`](docs/anatomy-system-overview.pptx) — عرض عربي من 20 شريحة، كل شريحة فيها لقطة حقيقية من النظام مع مؤشرات مرقّمة على الأزرار والعناصر التي يشرحها النص. طريقة إعادة بنائه في [`docs/deck/README.md`](docs/deck/README.md).
 
-The current viewer uses **BodyParts3D 4.0**, an adult male reference anatomy, licensed **CC BY 4.0**. It does not represent every human structure or variation. Individual source meshes are distinct from named concepts, which may group multiple meshes. Descriptions distinguish general system context from individual organ explanations.
+## الرخصة
 
-Geometry is simplified for browser performance while retaining every source mesh. The packaged model contains 2,288,268 triangles and downloads approximately 33 MB of compressed geometry. Full credits, source links, and adaptation details are in [ATTRIBUTION.md](public/ATTRIBUTION.md).
+كود التطبيق وطبقة المصطلحات العربية تحت [رخصة MIT](LICENSE). **أما البيانات التشريحية فلها رخصتها الخاصة CC BY 4.0** — أبقِ الإسناد عند إعادة توزيعها. المكتبات الخارجية تحتفظ برخصها.
 
-This is an educational explorer, not a diagnostic or surgical tool.
+المساهمات مرحّب بها. عند الإبلاغ عن مشكلة في التفاعل، أرفق خطوات إعادة إنتاجها ونوع المتصفح والجهاز.
 
-## How it works
-
-Geometry is merged into batches. Per-structure GPU textures control translation, visibility, and selection, while component geometry supports accurate picking. Exploded layouts pack only the visible pieces. Rendering updates when the scene changes; orbit controls remain responsive without thousands of separate draw calls.
-
-The optional WebMCP tools expose anatomy search and inspection in compatible browsers. The visible interface works without them.
-
-Labels and quiz mode read from the same per-structure state textures the renderer already maintains; label positions are projected in the existing render pass, so neither the batched rendering nor the GPU picking path changes.
-
-## Rebuilding geometry
-
-The repository includes browser-ready geometry. Rebuilding it is optional: obtain the official BodyParts3D OBJ archive and English metadata tables, prepare the joined concepts and display-system mappings, run `scripts/convert-anatomy.py`, then `node scripts/optimize-anatomy.mjs` and `node scripts/compress-models.mjs`. Simplification uses a 0.2% relative error limit per structure.
-
-## Deploy
-
-Import this repository into Vercel as a Vite project. The included `vercel.json` configures `npm ci`, `npm run build`, and the `dist` output directory. It can also be served by a static host.
-
-## License
-
-Original application code and the Arabic terminology layer are released under the [MIT License](LICENSE). **The anatomy data has its own CC BY 4.0 license**; preserve the attribution when redistributing it. Third-party dependencies retain their respective licenses.
-
-Issues and pull requests are welcome. Please include reproduction steps and browser/device details for interaction problems.
+</div>

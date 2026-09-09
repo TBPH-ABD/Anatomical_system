@@ -1,0 +1,134 @@
+# 3D Anatomy System
+
+*[النسخة العربية](README.md)*
+
+An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui, with a **complete Arabic interface (RTL) and Arabic anatomical terminology** for medical students. Take the BodyParts3D adult male reference apart into **2,234 individually selectable meshes**, explore **15 anatomical systems**, and search **3,432 named concepts** in Arabic, English, or Latin.
+
+نظام تشريح ثلاثي الأبعاد — مساعد لطلاب الطب البشري في جامعة العلوم والتكنولوجيا. مقدم من د. سمية عبد الله عبد، بمساعدة أخيها المهندس صلاح عبد الله عبد.
+
+**[Explore the live demo](https://human-atlas-seven.vercel.app)**
+
+## Explore
+
+- Orbit, zoom, and select structures directly on the body.
+- Toggle individual systems or use skeleton and organ presets.
+- Move from assembled anatomy to a spaced inventory of every visible piece.
+- Search anatomical names and source identifiers.
+- Isolate a selected structure and read its details.
+- Use compact controls and detail panels on mobile.
+
+## Study tools
+
+- **Quiz mode** hides the name and asks you to find the structure on the model, scoring answers and streaks. The question pool can be the visible systems, your favorites, or the whole atlas.
+- **Flashcards** for any structure, kept in the browser and exportable as CSV or as a tab-separated file that Anki imports directly. Both the Arabic and English names travel with each card.
+- **Labels** pin the largest visible structures with leader lines that cannot cross: each side of the screen keeps its anchors in vertical order.
+- **Favorites and custom lists** (for example "امتحان الأطراف العلوية") to build a revision set.
+- **Shareable links** restore the visible systems, the selected structure, the explode amount, the camera pose, and the language.
+- **Keyboard shortcuts** (`?` lists them) and labelled controls for screen readers.
+- **Explain this structure** asks Claude for a short, structured teaching explanation of the selected structure, in the language the interface is showing. Pressing it while offline only raises an alert — nothing is sent. Online, an explanation window opens over the page.
+- **Real download progress**: the 33 MB of geometry is read as a stream, so the bar reflects bytes actually received.
+
+## Arabic interface and terminology
+
+- The interface ships in Arabic (default) and English. `lib/i18n/en.ts` defines the message set; every other locale is typed against it, so a missing key fails `npm run check`. `dir`/`lang` are set on the document root and the layout uses logical CSS properties, so only the interface mirrors — the 3D scene never flips.
+- Headings use Arial; body text uses IBM Plex Sans Arabic with Noto Sans Arabic as a fallback, loaded with `font-display: swap`. Numbers stay Western Arabic (1234) to match the atlas identifiers beside them.
+- Anatomical names live in [`data/anatomy-terms-ar.json`](data/anatomy-terms-ar.json), keyed by the atlas concept or mesh identifier — never by English text — with `ar`, `en`, and where useful `la` fields.
+- Terms are built from a curated lexicon (`scripts/anatomy-lexicon.mjs`) that follows the Arabic equivalents of Terminologia Anatomica used in Arabic medical curricula. A name is translated only when every word of it is covered; **5,574 of 5,666 names (97.8% of concepts)** currently are. Anything else falls back to the English or Latin name rather than inventing one.
+- The detail panel always shows the Arabic name together with the English one (and the Latin term when available), because exams are written in English.
+- Search matches Arabic, English, and Latin at once, normalising hamza forms (أ إ آ → ا), tāʾ marbūṭa (ة → ه), alif maqṣūra, and diacritics.
+
+To rebuild the terminology after editing the lexicon:
+
+```sh
+npm run build:terms
+```
+
+## Run locally
+
+Requires Node.js 22.13 or newer. No API keys or accounts are needed.
+
+```sh
+npm ci
+npm run dev
+```
+
+Open http://localhost:3016. To build the static site, run `npm run build`; the output is in `dist/`.
+
+## Validate
+
+```sh
+npm run check
+node scripts/validate-atlas.mjs
+node scripts/validate-interactions.mjs
+node scripts/validate-terms.mjs
+npm run build
+```
+
+Validation covers mesh buffers, names and concept membership, nonoverlapping exploded layouts at desktop and mobile aspect ratios, search and inspection contracts, tap-versus-drag handling, share-link round trips, Arabic search normalisation, and the terminology file (every key is a real atlas identifier, every Arabic term is Arabic script, the published copy matches the source, and coverage stays above 95%). Browser interaction checks have exercised selection, system controls, search, isolation, rotation, and 390×844, 320×568, and 844×390 layouts. Phone controls stay clear of the exploded inventory, and isolated structures fit the space above or beside the detail panel. Physical-device performance and real multitouch hardware have not been tested.
+
+## The explain button
+
+The explanation is generated by a language model through `POST /api/explain`, implemented once in [`server/explain.ts`](server/explain.ts) and served two ways: as a Vercel function ([`api/explain.ts`](api/explain.ts)) in production, and through a dev middleware in [`vite.config.ts`](vite.config.ts) locally. The browser only ever sends the names of the selected structure; the key stays on the server.
+
+Any OpenAI-compatible provider works. The default is OpenRouter's free open-source models, so a key is all that is required:
+
+```sh
+cp .env.example .env          # then paste an openrouter.ai key into EXPLAIN_API_KEY
+npm run dev
+```
+
+| Provider | `EXPLAIN_BASE_URL` | Example `EXPLAIN_MODEL` |
+| --- | --- | --- |
+| OpenRouter (default) | `https://openrouter.ai/api/v1` | *(a chain of free models, see below)* |
+| Groq | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` |
+| Google AI Studio | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.0-flash` |
+| Ollama, on the same machine | `http://localhost:11434/v1` | `qwen2.5:latest` (no key) |
+| Anthropic | *(leave unset, set `ANTHROPIC_API_KEY`)* | `claude-opus-5` |
+
+Free models share an upstream pool that rate-limits without warning, so a request walks a chain of them until one answers: `nex-agi/nex-n2.5-mini:free`, then the two `google/gemma-4-*:free` models, then `nex-agi/nex-n2.5-pro:free`. `EXPLAIN_MODEL` pins a single model instead, and `EXPLAIN_MODELS` takes a comma-separated chain of your own. Any endpoint other than OpenRouter has to name its model.
+
+On Vercel, set the same variables in the project's environment. Without them the rest of the viewer is unaffected — the button reports that the service is not configured. Answers are cached per structure and language for the session, and each one carries a visible note that it is AI-generated educational context, not a clinical reference.
+
+Verify a configuration without opening the browser:
+
+```sh
+npm run test:explain        # stub provider: success, retry, and every failure shape
+curl -s -X POST localhost:3016/api/explain -H 'content-type: application/json' \
+  -d '{"en":"left lung","ar":"الرئة اليسرى","locale":"ar"}'   # the real provider
+```
+
+**Model choice matters here.** Small open models produce fluent Arabic with real anatomical mistakes; a local 7B run during development placed the left lung "beneath the lower back". Whichever model you configure, treat the explanation as revision support and check it against the course material — which is what the note under every explanation says.
+
+## What this build leaves out
+
+External genital structures (the penis and its vessels, the testes, and the epididymides) are excluded from this teaching build. They are listed by BodyParts3D identifier in [`lib/hidden-structures.ts`](lib/hidden-structures.ts) and filtered at runtime, so the source data is untouched and emptying that list restores them.
+
+## Anatomy data
+
+The current viewer uses **BodyParts3D 4.0**, an adult male reference anatomy, licensed **CC BY 4.0**. It does not represent every human structure or variation. Individual source meshes are distinct from named concepts, which may group multiple meshes. Descriptions distinguish general system context from individual organ explanations.
+
+Geometry is simplified for browser performance while retaining every source mesh. The packaged model contains 2,288,268 triangles and downloads approximately 33 MB of compressed geometry. Full credits, source links, and adaptation details are in [ATTRIBUTION.md](public/ATTRIBUTION.md).
+
+This is an educational explorer, not a diagnostic or surgical tool.
+
+## How it works
+
+Geometry is merged into batches. Per-structure GPU textures control translation, visibility, and selection, while component geometry supports accurate picking. Exploded layouts pack only the visible pieces. Rendering updates when the scene changes; orbit controls remain responsive without thousands of separate draw calls.
+
+The optional WebMCP tools expose anatomy search and inspection in compatible browsers. The visible interface works without them.
+
+Labels and quiz mode read from the same per-structure state textures the renderer already maintains; label positions are projected in the existing render pass, so neither the batched rendering nor the GPU picking path changes.
+
+## Rebuilding geometry
+
+The repository includes browser-ready geometry. Rebuilding it is optional: obtain the official BodyParts3D OBJ archive and English metadata tables, prepare the joined concepts and display-system mappings, run `scripts/convert-anatomy.py`, then `node scripts/optimize-anatomy.mjs` and `node scripts/compress-models.mjs`. Simplification uses a 0.2% relative error limit per structure.
+
+## Deploy
+
+Import this repository into Vercel as a Vite project. The included `vercel.json` configures `npm ci`, `npm run build`, and the `dist` output directory. It can also be served by a static host.
+
+## License
+
+Original application code and the Arabic terminology layer are released under the [MIT License](LICENSE). **The anatomy data has its own CC BY 4.0 license**; preserve the attribution when redistributing it. Third-party dependencies retain their respective licenses.
+
+Issues and pull requests are welcome. Please include reproduction steps and browser/device details for interaction problems.
