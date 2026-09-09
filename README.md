@@ -77,11 +77,13 @@ npm run dev
 
 | Provider | `EXPLAIN_BASE_URL` | Example `EXPLAIN_MODEL` |
 | --- | --- | --- |
-| OpenRouter (default) | `https://openrouter.ai/api/v1` | `google/gemma-4-31b-it:free` |
+| OpenRouter (default) | `https://openrouter.ai/api/v1` | *(a chain of free models, see below)* |
 | Groq | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` |
 | Google AI Studio | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.0-flash` |
 | Ollama, on the same machine | `http://localhost:11434/v1` | `qwen2.5:latest` (no key) |
 | Anthropic | *(leave unset, set `ANTHROPIC_API_KEY`)* | `claude-opus-5` |
+
+Free models share an upstream pool that rate-limits without warning, so a request walks a chain of them until one answers: `nex-agi/nex-n2.5-mini:free`, then the two `google/gemma-4-*:free` models, then `nex-agi/nex-n2.5-pro:free`. `EXPLAIN_MODEL` pins a single model instead, and `EXPLAIN_MODELS` takes a comma-separated chain of your own. Any endpoint other than OpenRouter has to name its model.
 
 On Vercel, set the same variables in the project's environment. Without them the rest of the viewer is unaffected — the button reports that the service is not configured. Answers are cached per structure and language for the session, and each one carries a visible note that it is AI-generated educational context, not a clinical reference.
 

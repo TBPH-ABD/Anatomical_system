@@ -1,5 +1,5 @@
 import {fileURLToPath} from 'node:url';
-import {defineConfig, type Plugin} from 'vite';
+import {defineConfig, loadEnv, type Plugin} from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/postcss';
 const path = (relative: string) => fileURLToPath(new URL(relative, import.meta.url));
@@ -10,6 +10,16 @@ const path = (relative: string) => fileURLToPath(new URL(relative, import.meta.u
 const explainApi = (): Plugin => ({
   name: 'anatomy-explain-api',
   configureServer(server) {
+    // Vite exposes .env through import.meta.env, which the server side of this
+    // plugin cannot see, so the file is read into process.env here. A variable
+    // already set in the shell wins.
+    // The project root, not server.config.root — Vite's root is web/, and the
+    // .env file sits beside package.json.
+    const fileEnv = loadEnv(server.config.mode, path('./'), '');
+    for (const [key, value] of Object.entries(fileEnv)) {
+      if (!key.startsWith('EXPLAIN_') && key !== 'ANTHROPIC_API_KEY') continue;
+      if (!process.env[key]) process.env[key] = value;
+    }
     server.middlewares.use('/api/explain', async (request, response, next) => {
       if (request.method !== 'POST') return next();
       try {

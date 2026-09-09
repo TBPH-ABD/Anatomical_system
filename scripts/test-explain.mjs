@@ -146,6 +146,27 @@ check('the Vercel function refuses a GET', gotten.status === 405, String(gotten.
 const broken = await callHandler('POST', '{not json');
 check('the Vercel function refuses a broken body', broken.status === 400, String(broken.status));
 
+// The model chain: a busy model must hand over to the next one.
+process.env.EXPLAIN_MODEL = '';
+process.env.EXPLAIN_MODELS = 'first/model:free,second/model:free';
+const {explainStructure: chained} = await import(`../server/explain.ts?chain=${Date.now()}`);
+const seen = [];
+current = {
+  reply: (res, s) => {
+    seen.push(s.body.model);
+    if (s.body.model === 'first/model:free') return json(res, 429, {error: 'busy'});
+    json(res, 200, {choices: [{message: {content: '## ما هي\nالقلب.'}}]});
+  },
+};
+state.hits = 0;
+const chain = await chained({en: 'heart', locale: 'ar'});
+check('falls back to the next model when one is busy', chain.status === 200 && seen.join() === 'first/model:free,second/model:free', seen.join());
+
+// Every model busy must surface the rate limit rather than a generic failure.
+current = {reply: (res) => json(res, 429, {error: 'busy'})};
+const allBusy = await chained({en: 'heart', locale: 'ar'});
+check('reports a rate limit when the whole chain is busy', allBusy.status === 429 && allBusy.body.error === 'rate_limited', JSON.stringify(allBusy));
+
 provider.close();
 console.log(failures ? `\n${failures} failing check(s)` : '\nExplain endpoint verified: provider handling, prompts, and the deployed function path.');
 process.exit(failures ? 1 : 0);

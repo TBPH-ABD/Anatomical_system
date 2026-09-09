@@ -18,7 +18,19 @@ const ANTHROPIC_MODEL = process.env.EXPLAIN_MODEL || 'claude-opus-5';
 /** Any OpenAI-compatible endpoint works here — OpenRouter's free open-source
  * models by default, but equally a local model served by Ollama. */
 const OPENAI_BASE = process.env.EXPLAIN_BASE_URL || 'https://openrouter.ai/api/v1';
-const OPENAI_MODEL = process.env.EXPLAIN_MODEL || 'google/gemma-4-31b-it:free';
+/** Free models share an upstream pool that rate-limits without warning, so a
+ * request walks this list until one answers. EXPLAIN_MODEL pins a single model;
+ * EXPLAIN_MODELS gives a comma-separated chain of your own. */
+const OPENAI_MODELS = (process.env.EXPLAIN_MODEL || process.env.EXPLAIN_MODELS || '')
+  .split(',')
+  .map((name) => name.trim())
+  .filter(Boolean);
+const DEFAULT_MODELS = [
+  'nex-agi/nex-n2.5-mini:free',
+  'google/gemma-4-31b-it:free',
+  'google/gemma-4-26b-a4b-it:free',
+  'nex-agi/nex-n2.5-pro:free',
+];
 /** OpenRouter attributes traffic with these; other providers ignore them. */
 const REFERER = process.env.EXPLAIN_REFERER || 'https://human-atlas-seven.vercel.app';
 const APP_TITLE = 'Anatomy System';
@@ -104,6 +116,7 @@ function stripThinking(text: string) {
 async function askOnce(
   endpoint: string,
   apiKey: string | undefined,
+  model: string,
   system: string,
   user: string,
   signal: AbortSignal,
@@ -119,7 +132,7 @@ async function askOnce(
         ...(apiKey ? {authorization: `Bearer ${apiKey}`} : {}),
       },
       body: JSON.stringify({
-        model: OPENAI_MODEL,
+        model,
         max_tokens: 1400,
         temperature: 0.3,
         messages: [
@@ -158,17 +171,32 @@ async function askOnce(
 }
 
 /** Any OpenAI-compatible chat endpoint: free hosted providers, or a local
- * model. Only the base URL and the model name change. Free endpoints drop
- * requests often enough to be worth one retry. */
+ * model. Walks the model chain, and retries a model once on a transient
+ * failure, until one answers. */
 async function viaOpenAICompatible(base: string, apiKey: string | undefined, input: ExplainRequest, arabic: boolean): Promise<ExplainResult> {
   const {system, user} = prompt(input, arabic);
   const endpoint = `${base.replace(/\/+$/, '')}/chat/completions`;
   // A model running on the same machine answers in tens of seconds, not the
   // couple of seconds a hosted one takes.
   const timeoutMs = Number(process.env.EXPLAIN_TIMEOUT_MS) || 180_000;
-  const first = await askOnce(endpoint, apiKey, system, user, AbortSignal.timeout(timeoutMs));
-  if (first.status !== 502) return first;
-  return askOnce(endpoint, apiKey, system, user, AbortSignal.timeout(timeoutMs));
+  // The default chain only makes sense on OpenRouter; any other endpoint has
+  // to name its own model.
+  if (!OPENAI_MODELS.length && process.env.EXPLAIN_BASE_URL) return {status: 503, body: {error: 'bad_model'}};
+  const models = OPENAI_MODELS.length ? OPENAI_MODELS : DEFAULT_MODELS;
+
+  let last: ExplainResult = {status: 502, body: {error: 'upstream'}};
+  for (const model of models) {
+    last = await askOnce(endpoint, apiKey, model, system, user, AbortSignal.timeout(timeoutMs));
+    if (last.status === 200) return last;
+    // A pinned single model still gets its retry; a busy one is skipped so the
+    // next model in the chain can answer instead.
+    if (last.status === 502) {
+      last = await askOnce(endpoint, apiKey, model, system, user, AbortSignal.timeout(timeoutMs));
+      if (last.status === 200) return last;
+    }
+    if (last.status === 503 && last.body.error === 'not_configured') return last;
+  }
+  return last;
 }
 
 /** Asks the configured model for a short teaching explanation of one structure.
