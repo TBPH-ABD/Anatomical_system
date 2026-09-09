@@ -714,7 +714,7 @@ export default function Home() {
         </div>
       )}
 
-      <Sheet open={details && selectedParts.length > 0 && !quizOn} modal={false} disablePointerDismissal onOpenChange={setDetails}>
+      <Sheet open={details && selectedParts.length > 0 && !quizOn && !splash} modal={false} disablePointerDismissal onOpenChange={setDetails}>
         <SheetContent initialFocus={detailTitle} className={`detail-sheet glass ${state.isolate ? 'is-isolated' : ''}`} showCloseButton>
           <div className="detail-header">
             <div className="detail-accent" style={{background: system?.color}} />
