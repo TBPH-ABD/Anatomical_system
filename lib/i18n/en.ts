@@ -158,6 +158,8 @@ export const en = {
     errorUnavailable: 'The explanation service is not set up on this server yet.',
     errorBusy: 'The service is busy right now. Try again in a moment.',
     errorRefused: 'The model declined to answer this one.',
+    errorModel: 'The configured model is unavailable. Check the model name or the provider quota.',
+    errorSlow: 'The model took too long to answer. Try again.',
     errorGeneric: 'The explanation could not be produced. Try again.',
   },
   scene: {

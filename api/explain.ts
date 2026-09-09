@@ -1,5 +1,5 @@
 import type {IncomingMessage, ServerResponse} from 'node:http';
-import {explainStructure, readJsonBody, type ExplainRequest} from '../server/explain';
+import {explainStructure, readJsonBody, type ExplainRequest} from '../server/explain.ts';
 
 /** POST /api/explain — the viewer's "explain this structure" button.
  * The API key stays on the server; the browser only ever sends the names of

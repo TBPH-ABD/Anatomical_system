@@ -91,18 +91,27 @@ async function viaAnthropic(apiKey: string, input: ExplainRequest, arabic: boole
   }
 }
 
-/** Any OpenAI-compatible chat endpoint: free hosted providers, or a local
- * model. Only the base URL and the model name change. */
-async function viaOpenAICompatible(base: string, apiKey: string | undefined, input: ExplainRequest, arabic: boolean): Promise<ExplainResult> {
-  const {system, user} = prompt(input, arabic);
-  const endpoint = `${base.replace(/\/+$/, '')}/chat/completions`;
-  // A model running on the same machine answers in tens of seconds, not the
-  // couple of seconds a hosted one takes.
-  const timeout = AbortSignal.timeout(Number(process.env.EXPLAIN_TIMEOUT_MS) || 180_000);
+/** Reasoning models emit their scratchpad in the answer; the student must not
+ * see it. */
+function stripThinking(text: string) {
+  return text
+    .replace(/<(think|thinking|reasoning)>[\s\S]*?<\/\1>/gi, '')
+    .replace(/^[\s\S]*?<\/(?:think|thinking|reasoning)>/i, '')
+    .trim();
+}
+
+/** One attempt at an OpenAI-compatible chat endpoint. */
+async function askOnce(
+  endpoint: string,
+  apiKey: string | undefined,
+  system: string,
+  user: string,
+  signal: AbortSignal,
+): Promise<ExplainResult> {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      signal: timeout,
+      signal,
       headers: {
         'content-type': 'application/json',
         'http-referer': REFERER,
@@ -121,13 +130,45 @@ async function viaOpenAICompatible(base: string, apiKey: string | undefined, inp
     });
     if (response.status === 401 || response.status === 403) return {status: 503, body: {error: 'not_configured'}};
     if (response.status === 429) return {status: 429, body: {error: 'rate_limited'}};
+    // A model name that the provider does not serve, or a free tier that has
+    // run out, is a configuration problem rather than a passing failure.
+    if (response.status === 400 || response.status === 402 || response.status === 404) {
+      return {status: 503, body: {error: 'bad_model'}};
+    }
     if (!response.ok) return {status: 502, body: {error: 'upstream'}};
-    const data = (await response.json()) as {choices?: {message?: {content?: string}}[]};
-    const text = data.choices?.[0]?.message?.content?.trim();
+    const data = (await response.json().catch(() => null)) as
+      | {choices?: {message?: {content?: string}}[]; error?: {message?: string; code?: number}}
+      | null;
+    // OpenRouter reports some failures with HTTP 200 and an error object.
+    if (!data || data.error) {
+      const code = data?.error?.code;
+      if (code === 401 || code === 403) return {status: 503, body: {error: 'not_configured'}};
+      if (code === 429) return {status: 429, body: {error: 'rate_limited'}};
+      if (code === 400 || code === 402 || code === 404) return {status: 503, body: {error: 'bad_model'}};
+      return {status: 502, body: {error: 'upstream'}};
+    }
+    const text = stripThinking(data.choices?.[0]?.message?.content ?? '');
     return text ? {status: 200, body: {text}} : {status: 502, body: {error: 'empty'}};
-  } catch {
+  } catch (error) {
+    if ((error as Error).name === 'TimeoutError' || (error as Error).name === 'AbortError') {
+      return {status: 504, body: {error: 'slow'}};
+    }
     return {status: 502, body: {error: 'upstream'}};
   }
+}
+
+/** Any OpenAI-compatible chat endpoint: free hosted providers, or a local
+ * model. Only the base URL and the model name change. Free endpoints drop
+ * requests often enough to be worth one retry. */
+async function viaOpenAICompatible(base: string, apiKey: string | undefined, input: ExplainRequest, arabic: boolean): Promise<ExplainResult> {
+  const {system, user} = prompt(input, arabic);
+  const endpoint = `${base.replace(/\/+$/, '')}/chat/completions`;
+  // A model running on the same machine answers in tens of seconds, not the
+  // couple of seconds a hosted one takes.
+  const timeoutMs = Number(process.env.EXPLAIN_TIMEOUT_MS) || 180_000;
+  const first = await askOnce(endpoint, apiKey, system, user, AbortSignal.timeout(timeoutMs));
+  if (first.status !== 502) return first;
+  return askOnce(endpoint, apiKey, system, user, AbortSignal.timeout(timeoutMs));
 }
 
 /** Asks the configured model for a short teaching explanation of one structure.

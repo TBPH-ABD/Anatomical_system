@@ -17,6 +17,8 @@ const ERRORS: Record<string, MessageKey> = {
   not_configured: 'explain.errorUnavailable',
   rate_limited: 'explain.errorBusy',
   refused: 'explain.errorRefused',
+  bad_model: 'explain.errorModel',
+  slow: 'explain.errorSlow',
 };
 
 /** Drives the explain flow: offline gets an alert and nothing else; online goes
@@ -86,6 +88,17 @@ export interface ExplainSection {
 
 /** Splits the model's "## heading" answer into sections for rendering.
  * Text before the first heading is kept, so an unexpected shape still shows. */
+/** Strips the markdown emphasis and list markers a model adds; the panel has
+ * its own typography. */
+function clean(line: string) {
+  return line
+    .replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .trim();
+}
+
 export function parseExplanation(text: string): ExplainSection[] {
   const sections: ExplainSection[] = [];
   for (const rawLine of text.split('\n')) {
@@ -93,11 +106,17 @@ export function parseExplanation(text: string): ExplainSection[] {
     if (!line) continue;
     const heading = line.match(/^#{1,6}\s*(.+)$/);
     if (heading) {
-      sections.push({heading: heading[1].trim(), lines: []});
+      sections.push({heading: clean(heading[1]), lines: []});
       continue;
     }
     if (!sections.length) sections.push({heading: '', lines: []});
-    sections[sections.length - 1].lines.push(line.replace(/^[-*]\s*/, ''));
+    sections[sections.length - 1].lines.push(clean(line));
+  }
+  // The prompt asks the model to close with a disclaimer, and the panel prints
+  // its own underneath; only one of them should be on screen.
+  const last = sections[sections.length - 1];
+  if (last) {
+    last.lines = last.lines.filter((line) => !/ليس مرجع|not a clinical reference/i.test(line));
   }
   return sections.filter((section) => section.heading || section.lines.length);
 }

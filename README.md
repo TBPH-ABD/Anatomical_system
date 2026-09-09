@@ -85,6 +85,14 @@ npm run dev
 
 On Vercel, set the same variables in the project's environment. Without them the rest of the viewer is unaffected — the button reports that the service is not configured. Answers are cached per structure and language for the session, and each one carries a visible note that it is AI-generated educational context, not a clinical reference.
 
+Verify a configuration without opening the browser:
+
+```sh
+npm run test:explain        # stub provider: success, retry, and every failure shape
+curl -s -X POST localhost:3016/api/explain -H 'content-type: application/json' \
+  -d '{"en":"left lung","ar":"الرئة اليسرى","locale":"ar"}'   # the real provider
+```
+
 **Model choice matters here.** Small open models produce fluent Arabic with real anatomical mistakes; a local 7B run during development placed the left lung "beneath the lower back". Whichever model you configure, treat the explanation as revision support and check it against the course material — which is what the note under every explanation says.
 
 ## What this build leaves out
