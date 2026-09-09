@@ -272,7 +272,8 @@ export default function Home() {
       locale,
     );
     void navigator.clipboard?.writeText(url).catch(() => {});
-    history.replaceState(null, '', url);
+    // The address bar is deliberately left alone: rewriting it would make every
+    // later reload reopen this selection instead of starting clean.
     setCopied(true);
     setTimeout(() => setCopied(false), 2200);
   }, [state, chosen, locale]);
@@ -752,9 +753,9 @@ export default function Home() {
                 {selectedParts.length > 50 && <p>{t('detail.andMore', {count: selectedParts.length - 50})}</p>}
               </div>
             )}
-            <ExplainButton onStart={() => chosen && void explainer.start(explainInput(chosen))} />
           </div>
           <div className="detail-actions">
+            <ExplainButton onStart={() => chosen && void explainer.start(explainInput(chosen))} />
             <Button className={`primary-action ${state.isolate ? 'active' : ''}`} onClick={() => setState((s) => ({...s, isolate: !s.isolate, explode: 0}))}>
               <Focus size={18} />
               {state.isolate ? t('detail.unisolate') : t('detail.isolate')}
