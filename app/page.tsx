@@ -159,7 +159,7 @@ export default function Home() {
 
   const choose = useCallback((c: Concept) => {
     setChosen(c);
-    setState((s) => ({...s, selected: c.elements, isolate: false, rotate: false}));
+    setState((s) => ({...s, selected: c.elements, isolate: false}));
     setDetails(true);
     setPanel(null);
   }, []);
@@ -208,7 +208,7 @@ export default function Home() {
       setScore((s) => ({asked: s.asked + 1, correct: s.correct + (right ? 1 : 0), streak: right ? s.streak + 1 : 0}));
       if (right) {
         setStatus('right');
-        setState((s) => ({...s, selected: question.elements, isolate: false, rotate: false}));
+        setState((s) => ({...s, selected: question.elements, isolate: false}));
       } else {
         setStatus('wrong');
         setWrongName(partName(partId));
@@ -227,7 +227,7 @@ export default function Home() {
       const p = parts.get(id);
       if (!p) return;
       setChosen({id: p.conceptId, name: p.name, elements: [id]});
-      setState((s) => ({...s, selected: [id], isolate: false, rotate: false}));
+      setState((s) => ({...s, selected: [id], isolate: false}));
       setDetails(true);
       setPanel(null);
     },
