@@ -2,7 +2,7 @@
  * every other locale is typed against it so a missing key is a build error. */
 export const en = {
   meta: {
-    title: 'Human Atlas — 3D Anatomy',
+    title: '3D Anatomy System',
     description:
       'An interactive atlas of the human body. Explore named anatomical structures, reveal organ systems, and inspect individual parts in 3D.',
     languageName: 'English',
@@ -11,7 +11,7 @@ export const en = {
   },
   identity: {
     eyebrow: 'INTERACTIVE ANATOMY',
-    title: 'Human Atlas',
+    title: '3D Anatomy System',
     edition: '3D',
     meta: '{count} modeled pieces',
     source: 'BodyParts3D',
@@ -143,7 +143,7 @@ export const en = {
     canvasLabel: 'Interactive human anatomy. Drag to orbit, pinch or scroll to zoom, and tap a structure to inspect it.',
   },
   splash: {
-    enter: 'Enter the atlas',
+    enter: 'Enter the system',
     preparing: 'Preparing…',
   },
   quiz: {

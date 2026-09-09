@@ -1,4 +1,4 @@
-# Human Atlas — أطلس جسم الإنسان
+# نظام تشريح ثلاثي الأبعاد — 3D Anatomy System
 
 An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui, with a **complete Arabic interface (RTL) and Arabic anatomical terminology** for medical students. Take the BodyParts3D adult male reference apart into **2,234 individually selectable meshes**, explore **15 anatomical systems**, and search **3,432 named concepts** in Arabic, English, or Latin.
 
@@ -62,6 +62,10 @@ npm run build
 ```
 
 Validation covers mesh buffers, names and concept membership, nonoverlapping exploded layouts at desktop and mobile aspect ratios, search and inspection contracts, tap-versus-drag handling, share-link round trips, Arabic search normalisation, and the terminology file (every key is a real atlas identifier, every Arabic term is Arabic script, the published copy matches the source, and coverage stays above 95%). Browser interaction checks have exercised selection, system controls, search, isolation, rotation, and 390×844, 320×568, and 844×390 layouts. Phone controls stay clear of the exploded inventory, and isolated structures fit the space above or beside the detail panel. Physical-device performance and real multitouch hardware have not been tested.
+
+## What this build leaves out
+
+External genital structures (the penis and its vessels, the testes, and the epididymides) are excluded from this teaching build. They are listed by BodyParts3D identifier in [`lib/hidden-structures.ts`](lib/hidden-structures.ts) and filtered at runtime, so the source data is untouched and emptying that list restores them.
 
 ## Anatomy data
 

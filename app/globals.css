@@ -187,9 +187,9 @@ output,.small-number,.system-count,kbd,.structure-meta strong,.card-face .small-
 .credit p{margin:0}
 .credit-title{font-size:19px;line-height:1.5;color:#22303c;font-weight:700}
 .credit-line{font-size:13px;line-height:1.6;color:#77818c}
-.credit-corner{text-align:start;gap:1px;max-width:52%;pointer-events:none}
-.credit-corner .credit-title{font-size:11px;font-weight:700;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
-.credit-corner .credit-line{font-size:9.5px;color:#8b949d;line-height:1.35}
+.credit-header{text-align:start;gap:2px;margin:9px 0 7px;max-width:min(430px,42vw)}
+.credit-header .credit-title{font-size:15px;font-weight:700;line-height:1.45;color:#22303c}
+.credit-header .credit-line{font-size:11px;color:#828c96;line-height:1.5}
 .about-copy .credit{text-align:start;margin-top:22px;padding-top:16px;border-top:1px solid #18253612}
 .about-copy .credit-title{font-size:15px}
 .about-copy .credit-line{font-size:12.5px}
@@ -197,10 +197,9 @@ output,.small-number,.system-count,kbd,.structure-meta strong,.card-face .small-
 @media(max-width:1100px){.quiz-panel,.cards-panel,.favorites-panel{width:310px}}
 @media(max-width:767px){
  .quiz-panel,.cards-panel,.favorites-panel{inset-inline:12px;width:auto;top:max(104px,calc(env(safe-area-inset-top) + 86px));max-height:calc(100dvh - 240px);z-index:40}
- .credit-corner{max-width:100%;text-align:center}
- .credit-corner .credit-line{display:none}
- .credit-corner .credit-title{font-size:9.5px;-webkit-line-clamp:2}
- .studio-footer{gap:8px;align-items:center}
+ .credit-header{max-width:calc(100vw - 40px);margin:6px 0 4px}
+ .credit-header .credit-title{font-size:12px;line-height:1.4}
+ .credit-header .credit-line{font-size:9.5px;line-height:1.4}
  .splash-card{padding:22px 18px 18px;gap:14px}
  .credit-title{font-size:15px}
  .credit-line{font-size:11.5px}
@@ -210,7 +209,8 @@ output,.small-number,.system-count,kbd,.structure-meta strong,.card-face .small-
 }
 @media(max-height:600px) and (orientation:landscape){
  .quiz-panel,.cards-panel,.favorites-panel{top:70px;inset-inline-end:12px;inset-inline-start:auto;width:320px;max-height:calc(100dvh - 100px)}
- .credit-corner{display:none}
+ .credit-header .credit-line{display:none}
+ .credit-header .credit-title{font-size:11px}
 }
 
 /* A study panel and the camera rail share the inline end, so the rail steps
@@ -255,5 +255,5 @@ body:has(.search-panel) .view-controls{top:auto;bottom:200px;transform:none}
  /* The source line duplicates the About sheet; the tool rail needs the room. */
  .identity-meta{display:none}
  .top-actions{top:max(92px,calc(env(safe-area-inset-top) + 74px))}
- .scene-caption{bottom:calc(214px + env(safe-area-inset-bottom))}
+ .scene-caption{bottom:calc(228px + env(safe-area-inset-bottom))}
 }

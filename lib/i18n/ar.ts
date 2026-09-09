@@ -5,7 +5,7 @@ import type {Messages} from './en';
  * Technical identifiers, file names, and shortcut keys stay in Latin script. */
 export const ar: Translation<Messages> = {
   meta: {
-    title: 'أطلس جسم الإنسان — تشريح ثلاثي الأبعاد',
+    title: 'نظام تشريح ثلاثي الأبعاد',
     description:
       'أطلس تفاعلي لجسم الإنسان. استكشف البنى التشريحية المسماة، وأظهر أجهزة الجسم، وافحص كل جزء في ثلاثة أبعاد.',
     languageName: 'العربية',
@@ -14,7 +14,7 @@ export const ar: Translation<Messages> = {
   },
   identity: {
     eyebrow: 'تشريح تفاعلي',
-    title: 'أطلس جسم الإنسان',
+    title: 'نظام تشريح ثلاثي الأبعاد',
     edition: '3D',
     meta: '{count} قطعة مجسمة',
     source: 'BodyParts3D',
@@ -147,7 +147,7 @@ export const ar: Translation<Messages> = {
     canvasLabel: 'تشريح بشري تفاعلي. اسحب للدوران، اقرص أو مرر للتكبير، وانقر على أي بنية لفحصها.',
   },
   splash: {
-    enter: 'ادخل إلى الأطلس',
+    enter: 'الدخول إلى النظام',
     preparing: 'جارٍ التجهيز…',
   },
   quiz: {

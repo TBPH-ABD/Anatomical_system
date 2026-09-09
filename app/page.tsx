@@ -34,6 +34,7 @@ import type {MessageKey} from '@/lib/i18n';
 import {normalizeTerm, useAnatomyTerms} from '@/lib/anatomy-terms';
 import {useStudy, type Flashcard, type SavedStructure} from '@/lib/study';
 import {applyShareState, decodeShareState, shareUrl, type CameraPose} from '@/lib/share-state';
+import {filterAtlas} from '@/lib/hidden-structures';
 import {Credit} from './ui/credit';
 import {LabelLayer} from './ui/labels';
 import {QuizPanel, type QuizPool, type QuizStatus} from './ui/quiz-panel';
@@ -88,7 +89,7 @@ export default function Home() {
         return response.json();
       })
       .then((data) => {
-        const loaded = data as Atlas;
+        const loaded = filterAtlas(data as Atlas);
         setAtlas(loaded);
         const concept = shared?.concept ? loaded.concepts.find((c) => c.id === shared.concept) : undefined;
         if (concept) {
@@ -347,12 +348,7 @@ export default function Home() {
         <div className="eyebrow">
           <span className="status-dot" /> {t('identity.eyebrow')}
         </div>
-        <h1>
-          {t('identity.title')}
-          <Badge variant="outline" className="edition">
-            {t('identity.edition')}
-          </Badge>
-        </h1>
+        <Credit variant="header" />
         <div className="identity-meta">
           {t('identity.meta', {count: atlas?.parts.length ?? 2234})} <span>·</span> {t('identity.source')}
         </div>
@@ -667,7 +663,6 @@ export default function Home() {
         <span className="footer-hints">
           {state.explode > 0.8 ? t('footer.pan') : t('footer.orbit')} <b>·</b> {t('footer.zoom')} <b>·</b> {t('footer.inspect')}
         </span>
-        <Credit variant="corner" />
         <Button
           variant="ghost"
           onClick={() => {
