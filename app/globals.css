@@ -257,3 +257,42 @@ body:has(.search-panel) .view-controls{top:auto;bottom:200px;transform:none}
  .top-actions{top:max(92px,calc(env(safe-area-inset-top) + 74px))}
  .scene-caption{bottom:calc(228px + env(safe-area-inset-bottom))}
 }
+
+/* The explain flow replaces the source link in the detail panel. */
+.explain-trigger{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:42px;font-size:12.5px;font-weight:500;color:#2c4a56;border:1px solid #3c6b7a3d;border-radius:10px;background:linear-gradient(180deg,#f2f8f9,#eaf2f4)}
+.explain-trigger:hover{background:#e4eef1}
+.explain-backdrop{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;background:#1b26301f;backdrop-filter:blur(4px)}
+.explain-window{width:min(680px,100%);max-height:min(78dvh,720px);display:flex;flex-direction:column;border-radius:18px;overflow:hidden}
+.explain-window-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 12px;border-bottom:1px solid #18253614}
+.explain-window-head h3{margin:6px 0 0;font-size:20px;font-weight:600;line-height:1.3;color:#22303c}
+.explain-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.02em;color:#3c6b7a}
+.explain-window-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:16px 20px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin;scrollbar-color:#b9c3cc transparent}
+.explain-window-foot{padding:11px 20px;border-top:1px solid #18253614;font-size:11px;line-height:1.6;color:#8b949d}
+.explain-section{display:flex;flex-direction:column;gap:5px}
+.explain-section h4{margin:0;font-size:13.5px;font-weight:700;color:#26313c}
+.explain-section p{margin:0;font-size:14px;line-height:1.95;color:#4f5b67}
+.explain-loading{display:flex;align-items:center;gap:9px;margin:0;font-size:13.5px;color:#66727f;min-height:44px}
+.explain-spinner{animation:explain-spin 1s linear infinite}
+@keyframes explain-spin{to{transform:rotate(360deg)}}
+.explain-error{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.explain-error .primary-action{min-height:40px;padding-inline:16px}
+.explain-alert{width:min(420px,100%);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px}
+.explain-alert-title{display:flex;align-items:center;gap:8px;margin:0;font-size:15px;font-weight:600;color:#8a5a1e}
+.explain-error .explain-alert-title{color:#8a4438}
+.explain-alert-body{margin:0;font-size:13px;line-height:1.85;color:#66727f}
+.explain-alert .primary-action{align-self:stretch;justify-content:center;min-height:42px}
+@media(max-width:767px){
+ .explain-backdrop{padding:14px;align-items:flex-end}
+ .explain-window{max-height:82dvh;border-radius:16px}
+ .explain-window-head{padding:14px 16px 10px}
+ .explain-window-head h3{font-size:17px}
+ .explain-window-body{padding:14px 16px;gap:13px}
+ .explain-section p{font-size:13.5px;line-height:1.85}
+}
+@media(prefers-reduced-motion:reduce){.explain-spinner{animation:none}}
+
+/* The course credit reads as one clear, bold block. */
+.credit-line{font-weight:600;color:#5d6975}
+.credit-header .credit-line{font-weight:600;color:#68737e}
+.splash-card .credit-line{font-weight:600;color:#55616d;font-size:14px}
+@media(max-width:767px){.splash-card .credit-line{font-size:12px}}

@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   ChevronLeft,
   Focus,
-  Info,
   Keyboard,
   Languages,
   Layers3,
@@ -35,12 +34,14 @@ import {normalizeTerm, useAnatomyTerms} from '@/lib/anatomy-terms';
 import {useStudy, type Flashcard, type SavedStructure} from '@/lib/study';
 import {applyShareState, decodeShareState, shareUrl, type CameraPose} from '@/lib/share-state';
 import {filterAtlas} from '@/lib/hidden-structures';
+import {useExplainer} from '@/lib/explain';
 import {Credit} from './ui/credit';
 import {LabelLayer} from './ui/labels';
 import {QuizPanel, type QuizPool, type QuizStatus} from './ui/quiz-panel';
 import {FlashcardsPanel} from './ui/flashcards-panel';
 import {FavoritesPanel} from './ui/favorites-panel';
 import {ShortcutsSheet} from './ui/shortcuts-sheet';
+import {ExplainButton, ExplainWindow} from './ui/explain-panel';
 
 const initial: SceneState = {explode: 0, visible: DEFAULT_VISIBLE, selected: [], isolate: false, view: 'three-quarter', rotate: false, reset: 0};
 type Panel = 'layers' | 'search' | 'quiz' | 'cards' | 'favorites' | null;
@@ -54,6 +55,7 @@ export default function Home() {
   const aboutTitle = useRef<HTMLHeadingElement>(null);
   const terms = useAnatomyTerms();
   const study = useStudy();
+  const explainer = useExplainer();
 
   const [atlas, setAtlas] = useState<Atlas | null>(null);
   const [state, setState] = useState(initial);
@@ -298,6 +300,7 @@ export default function Home() {
       else if (press === 'f' && savedEntry) study.toggleFavorite(savedEntry);
       else if (press === '0') reset();
       else if (press === '?') setShortcuts(true);
+      else if (press === 'a') setAbout(true);
       else if (['1', '2', '3', '4'].includes(press)) {
         const view = views[Number(press) - 1];
         setState((s) => ({...s, view, reset: s.reset + 1, rotate: false}));
@@ -312,6 +315,22 @@ export default function Home() {
     (index: number) => (quizOn || !atlas ? null : partName(atlas.parts[index].id)),
     [quizOn, atlas, partName],
   );
+
+  const explainInput = useCallback(
+    (concept: Concept) => ({
+      id: concept.id,
+      en: concept.name,
+      ar: terms.arabic(concept.id),
+      la: terms.latin(concept.id),
+      system: selected ? t(`systems.${selected.system}.name` as MessageKey) : undefined,
+      locale,
+    }),
+    [terms, selected, t, locale],
+  );
+  useEffect(() => {
+    explainer.reset();
+    // Each structure gets its own explanation; a stale one must not linger.
+  }, [chosen?.id, locale, explainer.reset]);
 
   const title = chosen ? conceptName(chosen) : '';
   const englishTitle = chosen?.name ?? '';
@@ -391,18 +410,6 @@ export default function Home() {
         </Button>
         <Button variant="ghost" className="icon-button" onClick={() => setLocale(arabic ? 'en' : 'ar')} aria-label={t('meta.switchLabel')} title={t('meta.switchTo')}>
           <Languages size={18} />
-        </Button>
-        <Button
-          variant="ghost"
-          className="icon-button"
-          aria-label={t('actions.about')}
-          onClick={() => {
-            setDetails(false);
-            setPanel(null);
-            setAbout(true);
-          }}
-        >
-          <Info size={18} />
         </Button>
       </nav>
 
@@ -663,16 +670,6 @@ export default function Home() {
         <span className="footer-hints">
           {state.explode > 0.8 ? t('footer.pan') : t('footer.orbit')} <b>·</b> {t('footer.zoom')} <b>·</b> {t('footer.inspect')}
         </span>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setDetails(false);
-            setPanel(null);
-            setAbout(true);
-          }}
-        >
-          {t('footer.credits')} <ArrowUpRight size={12} />
-        </Button>
       </footer>
 
       {copied && (
@@ -735,12 +732,12 @@ export default function Home() {
             {chosen && !hasExplanation(chosen.name) && <span className="context-note">{t('detail.contextNote')}</span>}
             <div className="structure-meta">
               <span>
-                {t('detail.reference')}
-                <strong>{chosen?.id}</strong>
-              </span>
-              <span>
                 {t('detail.selectedPieces')}
                 <strong>{n(state.selected.length)}</strong>
+              </span>
+              <span>
+                {t('detail.system')}
+                <strong>{system ? systemName(system.id) : t('detail.fallbackSystem')}</strong>
               </span>
             </div>
             {selectedParts.length > 1 && (
@@ -755,9 +752,7 @@ export default function Home() {
                 {selectedParts.length > 50 && <p>{t('detail.andMore', {count: selectedParts.length - 50})}</p>}
               </div>
             )}
-            <a className="source-link" href="https://lifesciencedb.jp/bp3d/" target="_blank" rel="noreferrer">
-              {t('detail.sourceLink')} <ArrowUpRight size={14} />
-            </a>
+            <ExplainButton onStart={() => chosen && void explainer.start(explainInput(chosen))} />
           </div>
           <div className="detail-actions">
             <Button className={`primary-action ${state.isolate ? 'active' : ''}`} onClick={() => setState((s) => ({...s, isolate: !s.isolate, explode: 0}))}>
@@ -808,6 +803,15 @@ export default function Home() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <ExplainWindow
+        phase={explainer.phase}
+        title={title}
+        text={explainer.text}
+        error={explainer.error}
+        onRetry={() => chosen && void explainer.confirm(explainInput(chosen))}
+        onClose={explainer.reset}
+      />
 
       <ShortcutsSheet open={shortcuts} onOpenChange={setShortcuts} />
 

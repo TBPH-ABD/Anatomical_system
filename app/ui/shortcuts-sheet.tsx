@@ -14,6 +14,7 @@ const SHORTCUTS: [string, MessageKey][] = [
   ['0', 'shortcuts.reset'],
   ['1 – 4', 'shortcuts.views'],
   ['Esc', 'shortcuts.escape'],
+  ['A', 'shortcuts.about'],
   ['?', 'shortcuts.help'],
 ];
 
