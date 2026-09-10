@@ -198,20 +198,24 @@ output,.small-number,.system-count,kbd,.structure-meta strong,.card-face .small-
 .about-copy .credit-line{font-size:12.5px}
 
 @media(max-width:1100px){.quiz-panel,.cards-panel,.favorites-panel{width:310px}}
+@media(max-width:900px){.splash-logo:last-of-type{display:none}.splash-logo{width:clamp(80px,11vw,120px)}}
 @media(max-width:767px){
  .quiz-panel,.cards-panel,.favorites-panel{inset-inline:12px;width:auto;top:max(104px,calc(env(safe-area-inset-top) + 86px));max-height:calc(100dvh - 240px);z-index:40}
  .credit-header{max-width:calc(100vw - 40px);margin:6px 0 4px}
  .credit-header .credit-title{font-size:12px;line-height:1.4}
  .credit-header .credit-line{font-size:9.5px;line-height:1.4}
  .splash-card{padding:22px 18px 18px;gap:14px}
- .splash-logo{display:none}
+ /* Two emblems will not sit beside a card on a phone, so the pair becomes
+    one above it. */
+ .splash{flex-direction:column;gap:14px}
+ .splash-logo{width:76px}
+ .splash-logo:last-of-type{display:none}
  .credit-title{font-size:15px}
  .credit-line{font-size:11.5px}
  .toast{top:max(26px,calc(env(safe-area-inset-top) + 6px))}
  .quiz-question{font-size:15px}
  .card-question{font-size:16px}
 }
-@media(max-width:900px){.splash-logo:last-of-type{display:none}.splash-logo{width:clamp(80px,11vw,120px)}}
 @media(max-height:600px) and (orientation:landscape){
  .quiz-panel,.cards-panel,.favorites-panel{top:70px;inset-inline-end:12px;inset-inline-start:auto;width:320px;max-height:calc(100dvh - 100px)}
  .credit-header .credit-line{display:none}
@@ -301,3 +305,21 @@ body:has(.search-panel) .view-controls{top:auto;bottom:200px;transform:none}
 .credit-header .credit-line{font-weight:600;color:#68737e}
 .splash-card .credit-line{font-weight:600;color:#55616d;font-size:14px}
 @media(max-width:767px){.splash-card .credit-line{font-size:12px}}
+
+/* Phone, portrait: the overlay reads as three bands — title, actions, then the
+   camera rail sitting on the dock — instead of blocks that overlap each other
+   in the middle of a 390px screen. */
+@media(max-width:767px) and (orientation:portrait){
+ .identity{top:max(14px,env(safe-area-inset-top));inset-inline:max(12px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-right))}
+ .credit-header{max-width:none;margin:5px 0 0}
+ .credit-header .credit-title{font-size:13px;line-height:1.4}
+ /* The full credit belongs to the opening screen; the header keeps the title. */
+ .credit-header .credit-line,.identity-meta{display:none}
+ .top-actions{top:max(86px,calc(env(safe-area-inset-top) + 72px));inset-inline:max(12px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-right));flex-wrap:wrap;gap:4px;row-gap:4px}
+ .search-panel{top:max(138px,calc(env(safe-area-inset-top) + 124px))}
+ .anatomy-search-results{max-height:min(320px,calc(100dvh - 260px))!important}
+ .view-controls{top:auto;bottom:calc(134px + env(safe-area-inset-bottom))}
+ /* The rail would sit under the systems sheet, which opens over the dock. */
+ body:has(.layers-panel.mobile-open) .view-controls{visibility:hidden}
+ .scene-caption{display:none}
+}
