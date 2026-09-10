@@ -705,12 +705,14 @@ export default function Home() {
 
       {splash && !error && (
         <div className="splash" role="dialog" aria-modal="false" aria-label={t('identity.title')}>
+          <img className="splash-logo" src="/university-logo.png" alt={t('splash.logoAlt')} />
           <div className="splash-card glass">
             <Credit variant="splash" />
             <Button className="primary-action" onClick={() => setSplash(false)} disabled={!atlas}>
               {atlas ? t('splash.enter') : t('splash.preparing')}
             </Button>
           </div>
+          <img className="splash-logo" src="/university-logo.png" alt="" aria-hidden="true" />
         </div>
       )}
 

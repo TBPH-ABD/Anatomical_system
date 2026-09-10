@@ -166,6 +166,7 @@ export const en = {
     canvasLabel: 'Interactive human anatomy. Drag to orbit, pinch or scroll to zoom, and tap a structure to inspect it.',
   },
   splash: {
+    logoAlt: 'University of Science and Technology emblem',
     enter: 'Enter the system',
     preparing: 'Preparing…',
   },
