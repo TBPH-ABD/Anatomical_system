@@ -1,5 +1,5 @@
 import type {IncomingMessage, ServerResponse} from 'node:http';
-import {explainStructure, readJsonBody, type ExplainRequest} from '../server/explain.ts';
+import {explainStructure, readJsonBody, type ExplainRequest} from '../server/explain.js';
 
 /** POST /api/explain — the viewer's "explain this structure" button.
  * The API key stays on the server; the browser only ever sends the names of
@@ -18,7 +18,15 @@ export default async function handler(request: IncomingMessage, response: Server
     response.end(JSON.stringify({error: 'bad_request'}));
     return;
   }
-  const result = await explainStructure(payload);
+  // A crash here would reach the browser as Vercel's HTML error page, which the
+  // viewer cannot read as an answer; a JSON body keeps the failure legible.
+  let result;
+  try {
+    result = await explainStructure(payload);
+  } catch (error) {
+    console.error('explain failed', error);
+    result = {status: 502, body: {error: 'upstream'}};
+  }
   response.writeHead(result.status, {'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store'});
   response.end(JSON.stringify(result.body));
 }

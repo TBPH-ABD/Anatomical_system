@@ -177,8 +177,9 @@ async function viaOpenAICompatible(base: string, apiKey: string | undefined, inp
   const {system, user} = prompt(input, arabic);
   const endpoint = `${base.replace(/\/+$/, '')}/chat/completions`;
   // A model running on the same machine answers in tens of seconds, not the
-  // couple of seconds a hosted one takes.
-  const timeoutMs = Number(process.env.EXPLAIN_TIMEOUT_MS) || 180_000;
+  // couple of seconds a hosted one takes. A serverless function is killed long
+  // before that, so there it gives up early enough to still answer the browser.
+  const timeoutMs = Number(process.env.EXPLAIN_TIMEOUT_MS) || (process.env.VERCEL ? 20_000 : 180_000);
   // The default chain only makes sense on OpenRouter; any other endpoint has
   // to name its own model.
   if (!OPENAI_MODELS.length && process.env.EXPLAIN_BASE_URL) return {status: 503, body: {error: 'bad_model'}};
