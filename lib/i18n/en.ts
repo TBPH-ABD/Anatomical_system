@@ -168,6 +168,7 @@ export const en = {
   splash: {
     logoAlt: 'University of Science and Technology emblem',
     enter: 'Enter the system',
+    smallScreen: 'A tablet or a laptop shows the model in far more detail. The phone works, but fine structures are hard to tell apart on it.',
     preparing: 'Preparing…',
   },
   quiz: {

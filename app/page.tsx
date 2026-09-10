@@ -18,6 +18,7 @@ import {
   Tag,
   Layers,
   GraduationCap,
+  TabletSmartphone,
   X,
 } from 'lucide-react';
 import {Button} from '@/components/ui/button';
@@ -708,6 +709,11 @@ export default function Home() {
           <img className="splash-logo" src="/university-logo.png" alt={t('splash.logoAlt')} />
           <div className="splash-card glass">
             <Credit variant="splash" />
+            {/* A phone renders the atlas correctly but small; the student is
+                told once, on the way in, that a larger screen reads better. */}
+            <p className="splash-notice">
+              <TabletSmartphone size={16} /> {t('splash.smallScreen')}
+            </p>
             <Button className="primary-action" onClick={() => setSplash(false)} disabled={!atlas}>
               {atlas ? t('splash.enter') : t('splash.preparing')}
             </Button>
