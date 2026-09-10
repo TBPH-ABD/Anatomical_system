@@ -7,6 +7,7 @@ const SHORTCUTS: [string, MessageKey][] = [
   ['/', 'shortcuts.search'],
   ['L', 'shortcuts.layers'],
   ['N', 'shortcuts.labels'],
+  ['V', 'shortcuts.alive'],
   ['Q', 'shortcuts.quiz'],
   ['F', 'shortcuts.favorite'],
   ['I', 'shortcuts.isolate'],

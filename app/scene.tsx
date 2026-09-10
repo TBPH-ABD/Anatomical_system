@@ -7,6 +7,7 @@ import {createExplosionLayout} from './explosion-layout';
 import {decodeModelResponse} from './model-download';
 import {PointerTap} from './pointer-tap';
 import {SYSTEMS,type Atlas,type SceneState} from './anatomy';
+import {MOTION,tissueFor} from './tissue';
 import type {CameraPose} from '@/lib/share-state';
 /** A structure worth labelling, already projected into viewport pixels. */
 export interface SceneLabel {id:string;index:number;x:number;y:number;size:number}
@@ -18,6 +19,83 @@ interface Props {
  onCamera?:(pose:CameraPose)=>void;initialCamera?:CameraPose|null;
 }
 const LABEL_LIMIT=14;
+/** Heart rate and respiratory rate of a resting adult, in seconds per cycle. */
+const CARDIAC_CYCLE=.86,RESPIRATORY_CYCLE=4.3;
+const LIFE_VERTEX_HEAD=`
+attribute float partIndex;
+uniform sampler2D partState; uniform sampler2D selectionState; uniform sampler2D tissueState; uniform sampler2D vitalState; uniform sampler2D centerState;
+uniform float stateWidth; uniform float uTime; uniform float uLife;
+varying float partVisible; varying float partSelected;
+varying vec3 vTissue; varying float vRoughness; varying float vMottle; varying float vTranslucency; varying float vSheen; varying float vFlow; varying float vBeat;
+varying vec3 vTissuePosition; varying vec3 vViewDirection;
+/** Two humps per cycle: ventricular systole, then the weaker atrial kick. */
+float heartBeat(float t){float x=fract(t/${CARDIAC_CYCLE});return exp(-pow((x-0.13)/0.075,2.0))+0.42*exp(-pow((x-0.37)/0.09,2.0));}
+float breathWave(float t){return 0.5-0.5*cos(6.2831853*t/${RESPIRATORY_CYCLE});}
+`;
+const LIFE_VERTEX_BODY=`
+vec2 stateUv = vec2((partIndex + 0.5) / stateWidth, 0.5);
+vec4 state = texture2D(partState, stateUv);
+vec4 tissue = texture2D(tissueState, vec2(stateUv.x, 0.25));
+vec4 surface = texture2D(tissueState, vec2(stateUv.x, 0.75));
+vec4 vital = texture2D(vitalState, stateUv);
+vec4 origin = texture2D(centerState, stateUv);
+vTissue = tissue.rgb; vRoughness = tissue.a;
+vMottle = surface.r; vTranslucency = surface.g; vSheen = surface.b;
+float kind = vital.r, amplitude = vital.g * uLife;
+vBeat = heartBeat(uTime - vital.b); vFlow = vital.a;
+if (amplitude > 0.0001) {
+  vec3 local = transformed - origin.xyz;
+  if (kind < 1.5) transformed = origin.xyz + local * (1.0 - amplitude * heartBeat(uTime));
+  else if (kind < 2.5) transformed = origin.xyz + local * (1.0 + amplitude * breathWave(uTime) * vec3(0.8, 1.3, 1.15));
+  else if (kind < 3.5) { float breath = breathWave(uTime); transformed = origin.xyz + local * (1.0 + amplitude * breath * vec3(1.0, -0.55, 1.0)) - vec3(0.0, amplitude * breath * origin.w * 1.4, 0.0); }
+  else if (kind < 4.5) transformed = origin.xyz + local * (1.0 + amplitude * vBeat);
+  else if (kind < 5.5) transformed = origin.xyz + local * (1.0 + amplitude * (0.4 + 0.6 * breathWave(uTime)));
+  else if (kind < 6.5) transformed = origin.xyz + local * (1.0 + amplitude * sin(transformed.y * 26.0 + transformed.x * 9.0 - uTime * 1.5));
+  else transformed = origin.xyz + local * (1.0 + amplitude * vBeat);
+}
+vTissuePosition = transformed;
+transformed += state.xyz;
+partVisible = state.w; partSelected = texture2D(selectionState, stateUv).r;
+`;
+const LIFE_FRAGMENT_HEAD=`
+uniform float uTime; uniform float uLife;
+varying float partVisible; varying float partSelected;
+varying vec3 vTissue; varying float vRoughness; varying float vMottle; varying float vTranslucency; varying float vSheen; varying float vFlow; varying float vBeat;
+varying vec3 vTissuePosition; varying vec3 vViewDirection;
+float tissueHash(vec3 p){p=fract(p*0.3183099+vec3(0.71,0.113,0.419));p*=17.0;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+/** Value noise: lobules, fibres and capsule vessels, with no texture to load. */
+float tissueNoiseAt(vec3 x){
+ vec3 i=floor(x),f=fract(x);f=f*f*(3.0-2.0*f);
+ return mix(mix(mix(tissueHash(i),tissueHash(i+vec3(1,0,0)),f.x),mix(tissueHash(i+vec3(0,1,0)),tissueHash(i+vec3(1,1,0)),f.x),f.y),
+            mix(mix(tissueHash(i+vec3(0,0,1)),tissueHash(i+vec3(1,0,1)),f.x),mix(tissueHash(i+vec3(0,1,1)),tissueHash(i+vec3(1,1,1)),f.x),f.y),f.z);
+}
+float tissueGrain=0.5;
+`;
+const LIFE_COLOR_BODY=`
+if (uLife > 0.001) {
+  tissueGrain = tissueNoiseAt(vTissuePosition * 170.0) * 0.62 + tissueNoiseAt(vTissuePosition * 520.0) * 0.38;
+  diffuseColor.rgb = mix(diffuseColor.rgb, vTissue, uLife);
+  diffuseColor.rgb *= 1.0 + uLife * vMottle * (tissueGrain - 0.5) * 0.55;
+}
+diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.42, 0.85, 0.78), partSelected * 0.75);
+`;
+const LIFE_ROUGHNESS_BODY=`
+float roughnessFactor = mix(roughness, vRoughness, uLife);
+roughnessFactor = clamp(roughnessFactor * (1.0 + uLife * vMottle * (tissueGrain - 0.5) * 0.7) - uLife * vSheen * 0.12, 0.035, 1.0);
+`;
+const LIFE_EMISSIVE_BODY=`
+if (uLife > 0.001) {
+  float rim = pow(1.0 - clamp(dot(normalize(vViewDirection), normal), 0.0, 1.0), 2.6);
+  // Thin edges of living tissue are lit from inside by the blood in them.
+  totalEmissiveRadiance += uLife * vTranslucency * rim * vec3(0.46, 0.07, 0.06) * 1.25;
+  totalEmissiveRadiance += uLife * vSheen * pow(rim, 1.6) * vec3(0.85, 0.88, 0.90) * 0.10;
+  if (vFlow > 0.001) {
+    float wave = max(0.0, sin(vTissuePosition.y * 20.0 + vTissuePosition.x * 6.0 - uTime * 2.4));
+    totalEmissiveRadiance += uLife * vFlow * vTissue * (0.20 * wave + 0.45 * vBeat * wave);
+  }
+}
+`;
+
 export default function AnatomyScene({atlas,state,onSelect,onProgress,onError,nameFor,labels=false,onLabels,onCamera,initialCamera,canvasLabel}:Props){
  const host=useRef<HTMLDivElement>(null),latest=useRef(state),select=useRef(onSelect);
  const invalidate=useRef<(()=>void)|null>(null);
@@ -47,8 +125,31 @@ export default function AnatomyScene({atlas,state,onSelect,onProgress,onError,na
   const innerRing=new T.Mesh(new T.RingGeometry(.55,.551,128),new T.MeshBasicMaterial({color:0xa4aeb8,transparent:true,opacity:.16,side:T.DoubleSide}));innerRing.rotation.x=-Math.PI/2;innerRing.position.y=.001;scene.add(innerRing);
   const width=T.MathUtils.ceilPowerOfTwo(atlas.parts.length),data=new Float32Array(width*4),partTexture=new T.DataTexture(data,width,1,T.RGBAFormat,T.FloatType);partTexture.needsUpdate=true;
   const selectedData=new Uint8Array(width*4),selectionTexture=new T.DataTexture(selectedData,width,1);selectionTexture.needsUpdate=true;
+  // Living appearance: one texel per part carries its tissue colour and the
+  // physiology that moves it, so the whole atlas still draws in one pass.
+  const tissueData=new Float32Array(width*2*4),tissueTexture=new T.DataTexture(tissueData,width,2,T.RGBAFormat,T.FloatType);
+  const vitalData=new Float32Array(width*4),vitalTexture=new T.DataTexture(vitalData,width,1,T.RGBAFormat,T.FloatType);
+  const centerData=new Float32Array(width*4),centerTexture=new T.DataTexture(centerData,width,1,T.RGBAFormat,T.FloatType);
+  const life={uTime:{value:0},uLife:{value:0}};
   const materials:T.Material[]=[],geometries:T.BufferGeometry[]=[],pickers:(T.Mesh|undefined)[]=[],centers=atlas.parts.map(p=>new T.Vector3().fromArray(p.bounds[0]).add(new T.Vector3().fromArray(p.bounds[1])).multiplyScalar(.5));
   const offsets:T.Vector3[]=[],bounds=atlas.parts.map(p=>new T.Box3(new T.Vector3().fromArray(p.bounds[0]),new T.Vector3().fromArray(p.bounds[1])));
+  // The pressure wave leaves the heart, so arteries pulse later the further
+  // they are from it; veins lag further still.
+  const heartParts=atlas.parts.filter(p=>/wall of (left |right )?(atrium|ventricle)/i.test(p.name));
+  const heart=heartParts.length?heartParts.reduce((sum,p)=>sum.add(centers[atlas.parts.indexOf(p)]),new T.Vector3()).multiplyScalar(1/heartParts.length):new T.Vector3(0,1.26,.04);
+  const tissueColor=new T.Color(),partSize=new T.Vector3();
+  atlas.parts.forEach((p,i)=>{
+   const tissue=tissueFor(p.name,p.system);
+   tissueColor.set(tissue.color).convertSRGBToLinear();
+   tissueData.set([tissueColor.r,tissueColor.g,tissueColor.b,tissue.roughness],i*4);
+   tissueData.set([tissue.mottle,tissue.translucency,tissue.sheen,0],(width+i)*4);
+   bounds[i].getSize(partSize);
+   centerData.set([centers[i].x,centers[i].y,centers[i].z,Math.max(partSize.x,partSize.y,partSize.z)*.5],i*4);
+   const distance=centers[i].distanceTo(heart);
+   const delay=tissue.motion===MOTION.arterial?distance/5:tissue.motion===MOTION.venous?distance/3:0;
+   vitalData.set([tissue.motion,tissue.amplitude,delay,tissue.flow],i*4);
+  });
+  tissueTexture.needsUpdate=true;vitalTexture.needsUpdate=true;centerTexture.needsUpdate=true;
   let packingWidth=1,packingHeight=1;
   const markerPositions=new Float32Array(atlas.parts.length*3),markerGeometry=new T.BufferGeometry();markerGeometry.setAttribute('position',new T.BufferAttribute(markerPositions,3));
   const markerMaterial=new T.PointsMaterial({color:0x64748b,size:5,sizeAttenuation:false,transparent:true,opacity:.72,depthTest:false});
@@ -66,11 +167,17 @@ export default function AnatomyScene({atlas,state,onSelect,onProgress,onError,na
    const m=new T.MeshStandardMaterial({color:SYSTEMS.find(s=>s.id===system)?.color??'#aebbb8',metalness:.08,roughness:.53,side:T.DoubleSide,transparent:system==='integumentary',opacity:system==='integumentary'?.1:1,depthWrite:system!=='integumentary'});
    m.onBeforeCompile=shader=>{
     shader.uniforms.partState={value:partTexture};shader.uniforms.selectionState={value:selectionTexture};shader.uniforms.stateWidth={value:width};
-    shader.vertexShader='attribute float partIndex; uniform sampler2D partState; uniform sampler2D selectionState; uniform float stateWidth; varying float partVisible; varying float partSelected;\n'+shader.vertexShader;
-    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvec2 stateUv = vec2((partIndex + 0.5) / stateWidth, 0.5); vec4 state = texture2D(partState, stateUv); transformed += state.xyz; partVisible = state.w; partSelected = texture2D(selectionState, stateUv).r;');
-    shader.fragmentShader='varying float partVisible; varying float partSelected;\n'+shader.fragmentShader;
+    shader.uniforms.tissueState={value:tissueTexture};shader.uniforms.vitalState={value:vitalTexture};shader.uniforms.centerState={value:centerTexture};
+    // Shared objects: one clock and one mix drive every system's material.
+    shader.uniforms.uTime=life.uTime;shader.uniforms.uLife=life.uLife;
+    shader.vertexShader=LIFE_VERTEX_HEAD+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n'+LIFE_VERTEX_BODY);
+    shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvViewDirection = -mvPosition.xyz;');
+    shader.fragmentShader=LIFE_FRAGMENT_HEAD+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\nif (partVisible < 0.5) discard;');
-    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.42, 0.85, 0.78), partSelected * 0.75);');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+LIFE_COLOR_BODY);
+    shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',LIFE_ROUGHNESS_BODY);
+    shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n'+LIFE_EMISSIVE_BODY);
    };materials.push(m);return m;
   };
   const mats=new Map(SYSTEMS.map(s=>[s.id,materialFor(s.id)]));
@@ -124,9 +231,15 @@ export default function AnatomyScene({atlas,state,onSelect,onProgress,onError,na
   };
   renderer.domElement.addEventListener('pointerdown',down);renderer.domElement.addEventListener('pointermove',move);renderer.domElement.addEventListener('pointerup',up);renderer.domElement.addEventListener('pointercancel',cancel);
   invalidate.current=()=>{dirty=true;lastLabelEmit=0;};
-  const clock=new T.Clock();let lastExtent=-1;
+  const clock=new T.Clock();let lastExtent=-1,lifeMix=0;
   const animate=()=>{
    if(disposed)return;frame=requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),s=latest.current;
+   // A living model is never static, so it keeps asking for frames; with life
+   // off the scene falls back to drawing only when something changes.
+   const lifeTarget=s.alive===false?0:1;
+   if(Math.abs(lifeMix-lifeTarget)>.001){lifeMix=T.MathUtils.damp(lifeMix,lifeTarget,6,dt);dirty=true;}else lifeMix=lifeTarget;
+   life.uLife.value=lifeMix;
+   if(lifeMix>.001){life.uTime.value+=dt;dirty=true;}
    const changed=lastState?.visible!==s.visible||lastState?.selected!==s.selected||lastState?.isolate!==s.isolate;
    const moving=Math.abs(amount-s.explode)>.0001;
    if(moving){amount=T.MathUtils.damp(amount,s.explode,8,dt);dirty=true;}
@@ -177,7 +290,7 @@ export default function AnatomyScene({atlas,state,onSelect,onProgress,onError,na
 
   };animate();
   const contextLost=(e:Event)=>{e.preventDefault();onError('errors.contextLost');};renderer.domElement.addEventListener('webglcontextlost',contextLost);
-  return()=>{disposed=true;abort.abort();clearTimeout(cameraTimer);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());scene.traverse(o=>{if(o instanceof T.Mesh&&!geometries.includes(o.geometry)){o.geometry.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>m.dispose());}});env.dispose();partTexture.dispose();selectionTexture.dispose();markerGeometry.dispose();markerMaterial.dispose();hover.remove();renderer.dispose();renderer.domElement.remove();};
+  return()=>{disposed=true;abort.abort();clearTimeout(cameraTimer);cancelAnimationFrame(frame);observer.disconnect();controls.dispose();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());scene.traverse(o=>{if(o instanceof T.Mesh&&!geometries.includes(o.geometry)){o.geometry.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>m.dispose());}});env.dispose();partTexture.dispose();selectionTexture.dispose();tissueTexture.dispose();vitalTexture.dispose();centerTexture.dispose();markerGeometry.dispose();markerMaterial.dispose();hover.remove();renderer.dispose();renderer.domElement.remove();};
  },[atlas]);
  // Toggling labels changes nothing in the scene graph, so ask for one more frame.
  useEffect(()=>{invalidate.current?.();},[labels]);

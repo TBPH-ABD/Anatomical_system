@@ -29,6 +29,11 @@ export const en = {
     share: 'Share view',
     shortcuts: 'Keyboard shortcuts',
   },
+  alive: {
+    toggle: 'Living tissue',
+    on: 'Living tissue: on. Structures carry their real colours and move with the heartbeat and breathing.',
+    off: 'Living tissue: off. Structures carry flat teaching colours and stand still.',
+  },
   systemsPanel: {
     heading: 'Systems',
     closeAria: 'Close systems',
@@ -243,6 +248,7 @@ export const en = {
     rotate: 'Toggle auto rotation',
     isolate: 'Isolate the selected structure',
     labels: 'Toggle labels',
+    alive: 'Toggle living tissue',
     quiz: 'Toggle quiz mode',
     favorite: 'Favorite the selected structure',
     escape: 'Close panels',

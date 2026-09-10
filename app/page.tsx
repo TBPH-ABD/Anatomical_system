@@ -16,6 +16,7 @@ import {
   Search,
   Star,
   Tag,
+  HeartPulse,
   Layers,
   GraduationCap,
   TabletSmartphone,
@@ -44,7 +45,7 @@ import {FavoritesPanel} from './ui/favorites-panel';
 import {ShortcutsSheet} from './ui/shortcuts-sheet';
 import {ExplainButton, ExplainWindow} from './ui/explain-panel';
 
-const initial: SceneState = {explode: 0, visible: DEFAULT_VISIBLE, selected: [], isolate: false, view: 'three-quarter', rotate: false, reset: 0};
+const initial: SceneState = {alive: true, explode: 0, visible: DEFAULT_VISIBLE, selected: [], isolate: false, view: 'three-quarter', rotate: false, reset: 0};
 type Panel = 'layers' | 'search' | 'quiz' | 'cards' | 'favorites' | null;
 const ORGAN_SYSTEMS: SystemId[] = ['cardiac', 'respiratory', 'digestive', 'urinary', 'endocrine', 'reproductive'];
 const STARTERS = ['heart', 'brain', 'liver', 'stomach', 'spleen', 'pancreas', 'urinary bladder', 'trachea'];
@@ -298,6 +299,7 @@ export default function Home() {
       else if (press === 'q') setQuizOn((value) => !value);
       else if (press === 'n') setLabels((value) => !value);
       else if (press === 'r') setState((s) => ({...s, rotate: !s.rotate}));
+      else if (press === 'v') setState((s) => ({...s, alive: s.alive === false}));
       else if (press === 'i' && state.selected.length) setState((s) => ({...s, isolate: !s.isolate, explode: 0}));
       else if (press === 'f' && savedEntry) study.toggleFavorite(savedEntry);
       else if (press === '0') reset();
@@ -403,6 +405,16 @@ export default function Home() {
         </Button>
         <Button variant="ghost" className={`icon-button ${labels ? 'active' : ''}`} aria-pressed={labels} onClick={() => setLabels((value) => !value)} aria-label={t('labels.toggle')} title={t('labels.toggle')}>
           <Tag size={18} />
+        </Button>
+        <Button
+          variant="ghost"
+          className={`icon-button ${state.alive !== false ? 'active' : ''}`}
+          aria-pressed={state.alive !== false}
+          onClick={() => setState((s) => ({...s, alive: s.alive === false}))}
+          aria-label={state.alive !== false ? t('alive.on') : t('alive.off')}
+          title={t('alive.toggle')}
+        >
+          <HeartPulse size={18} />
         </Button>
         <Button variant="ghost" className="icon-button" onClick={copyShare} aria-label={t('actions.share')} title={t('actions.share')}>
           <Link2 size={18} />
