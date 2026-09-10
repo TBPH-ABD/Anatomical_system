@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <div dir="rtl">
 
 # نظام تشريح ثلاثي الأبعاد
@@ -135,3 +136,7 @@ npm run build
 المساهمات مرحّب بها. عند الإبلاغ عن مشكلة في التفاعل، أرفق خطوات إعادة إنتاجها ونوع المتصفح والجهاز.
 
 </div>
+=======
+# Anatomical_system
+A 3D anatomy system that runs in the browser with a fully Arabic right-to-left interface, designed for human medicine students at the University of Science and Technology
+>>>>>>> 834ec5d5ddbc832f5df77b90f459dc1ec7527459
