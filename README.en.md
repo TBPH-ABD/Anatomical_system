@@ -6,7 +6,7 @@ An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui, wi
 
 نظام تشريح ثلاثي الأبعاد — مساعد لطلاب الطب البشري في جامعة العلوم والتكنولوجيا. مقدم من د. سمية عبد الله عبد، بمساعدة أخيها المهندس صلاح عبد الله عبد.
 
-**[Explore the live demo](https://human-atlas-seven.vercel.app)**
+**[Explore the live demo](https://anatomical-system.vercel.app)**
 
 ## Explore
 

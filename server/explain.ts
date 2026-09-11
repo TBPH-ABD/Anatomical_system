@@ -32,7 +32,7 @@ const DEFAULT_MODELS = [
   'nex-agi/nex-n2.5-pro:free',
 ];
 /** OpenRouter attributes traffic with these; other providers ignore them. */
-const REFERER = process.env.EXPLAIN_REFERER || 'https://human-atlas-seven.vercel.app';
+const REFERER = process.env.EXPLAIN_REFERER || 'https://anatomical-system.vercel.app';
 const APP_TITLE = 'Anatomy System';
 
 const SYSTEM_AR = `أنت مدرّس تشريح تشرح لطالب طب بشري في السنوات الأولى.
