@@ -1,0 +1,724 @@
+<title>شاشة تشريح حية</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Changa:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@300;400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+
+<style>
+  /* A single, deliberate visual world: a bedside vital-signs monitor. It stays
+     dark on any host theme, so every colour here is painted explicitly. */
+  :root {
+    --ground: #070b0d;
+    --panel: #0e1519;
+    --panel-2: #131d22;
+    --line: #1d2c33;
+    --ink: #e7eff1;
+    --muted: #7f959d;
+    --dim: #55686f;
+    --trace: #3ad39c;
+    --artery: #cf3a2c;
+    --vein: #5081a6;
+    --bone: #ddd1af;
+    --nerve: #d8b565;
+    --gut: #bd8a74;
+    --step: clamp(14px, 1.15vw, 17px);
+    --display: 'Changa', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+    --body: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: var(--step);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .deck {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 0;
+    /* The faint graticule of a monitor screen. */
+    background:
+      radial-gradient(120% 90% at 50% 0%, #0d171c 0%, var(--ground) 62%),
+      repeating-linear-gradient(0deg, transparent 0 39px, #0f1a1f 39px 40px),
+      repeating-linear-gradient(90deg, transparent 0 39px, #0f1a1f 39px 40px);
+  }
+
+  /* ---------- chrome ---------- */
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 14px clamp(16px, 3vw, 38px);
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #0c1418, #080d10);
+  }
+  .mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--display);
+    font-weight: 700;
+    letter-spacing: .01em;
+  }
+  .mark .pip {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--trace);
+    box-shadow: 0 0 12px var(--trace);
+    animation: pip 860ms ease-in-out infinite;
+  }
+  @keyframes pip { 0%, 62%, 100% { opacity: .35; transform: scale(.82); } 8% { opacity: 1; transform: scale(1); } }
+
+  .bar .who {
+    font-size: .8em;
+    color: var(--muted);
+    margin-inline-start: auto;
+    text-align: end;
+    line-height: 1.45;
+  }
+  .bar .who b { color: var(--ink); font-weight: 600; }
+
+  .chapters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .chapters button {
+    font: 600 .72em/1 var(--mono);
+    color: var(--dim);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 7px 9px;
+    cursor: pointer;
+    transition: color .18s, border-color .18s, background .18s;
+  }
+  .chapters button:hover { color: var(--ink); }
+  .chapters button[aria-current='true'] {
+    color: var(--trace);
+    border-color: #1d4438;
+    background: #0c1a17;
+  }
+  :where(button, [tabindex]):focus-visible { outline: 2px solid var(--trace); outline-offset: 2px; }
+
+  /* ---------- stage ---------- */
+  .stage {
+    position: relative;
+    display: grid;
+    align-content: center;
+    padding: clamp(20px, 4vh, 54px) clamp(18px, 5vw, 76px);
+    overflow: hidden;
+  }
+  .slide { display: none; max-width: 1080px; width: 100%; margin-inline: auto; }
+  .slide[data-active='true'] { display: block; }
+
+  .eyebrow {
+    font: 600 .72em/1 var(--mono);
+    letter-spacing: .16em;
+    color: var(--trace);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2.1rem, 5.2vw, 3.7rem);
+    line-height: 1.22;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 3.4vw, 2.4rem);
+    line-height: 1.3;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+  .lede { color: var(--muted); max-width: 58ch; margin: 0 0 26px; }
+  .lede strong { color: var(--ink); font-weight: 600; }
+
+  /* staged entry: each slide reveals from a resting, readable state */
+  .slide[data-active='true'] .rise { animation: rise .5s cubic-bezier(.2, .7, .3, 1) backwards; }
+  .slide[data-active='true'] .rise:nth-child(2) { animation-delay: .05s; }
+  .slide[data-active='true'] .rise:nth-child(3) { animation-delay: .1s; }
+  .slide[data-active='true'] .rise:nth-child(4) { animation-delay: .15s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+
+  /* ---------- slide 1: hero ---------- */
+  .hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(20px, 4vw, 56px); align-items: center; }
+  .hero .credit { color: var(--muted); font-size: .92em; }
+  .hero .credit b { color: var(--ink); font-weight: 600; }
+  .heart-frame {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: linear-gradient(180deg, #0d171b, #090f12);
+    padding: 20px;
+    position: relative;
+  }
+  .heart-frame figcaption {
+    font: 400 .74em/1.5 var(--mono);
+    color: var(--dim);
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+  }
+  .beat { transform-origin: 50% 55%; animation: beat 860ms ease-in-out infinite; }
+  @keyframes beat {
+    0%, 100% { transform: scale(1); }
+    9% { transform: scale(.935); }
+    20% { transform: scale(1.012); }
+    38% { transform: scale(.972); }
+    52% { transform: scale(1); }
+  }
+
+  /* ---------- slide 2: counters ---------- */
+  .readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 26px; }
+  .readout { border: 1px solid var(--line); border-inline-start: 2px solid var(--trace); background: var(--panel); padding: 16px 18px; }
+  .readout .n { font: 600 clamp(1.9rem, 4vw, 2.9rem)/1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .readout .k { color: var(--muted); font-size: .86em; margin-top: 6px; }
+  .readout:nth-child(2) { border-inline-start-color: var(--artery); }
+  .readout:nth-child(3) { border-inline-start-color: var(--vein); }
+  .readout:nth-child(4) { border-inline-start-color: var(--bone); }
+
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .note { border: 1px solid var(--line); background: var(--panel); padding: 16px 18px; }
+  .note h3 { font-family: var(--display); font-size: 1.05em; margin: 0 0 6px; font-weight: 700; }
+  .note p { margin: 0; color: var(--muted); font-size: .93em; }
+
+  /* ---------- slide 3: systems ---------- */
+  .systems { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 8px; }
+  .sys {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 11px 13px;
+    transition: background .25s, border-color .25s, transform .25s;
+  }
+  .sys .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; box-shadow: 0 0 0 3px #ffffff0a; }
+  .sys .nm { font-size: .92em; }
+  .sys .ct { margin-inline-start: auto; font: 400 .82em var(--mono); color: var(--dim); font-variant-numeric: tabular-nums; }
+  .sys.lit { border-color: #2b4048; background: var(--panel-2); transform: translateY(-2px); }
+  .sys.lit .ct { color: var(--ink); }
+
+  /* ---------- slide 4: living tissue ---------- */
+  .tissue { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .card { border: 1px solid var(--line); background: var(--panel); padding: 18px; }
+  .card h3 { font-family: var(--display); font-weight: 700; font-size: 1.06em; margin: 0 0 4px; }
+  .card .rate { font: 400 .78em var(--mono); color: var(--trace); }
+  .card p { color: var(--muted); font-size: .92em; margin: 8px 0 0; }
+  .card figure { margin: 14px 0 0; height: 74px; display: grid; place-items: center; }
+
+  .swatches { display: flex; gap: 10px; align-items: stretch; margin-bottom: 20px; flex-wrap: wrap; }
+  .swatch { flex: 1 1 150px; border: 1px solid var(--line); background: var(--panel); padding: 12px; }
+  .swatch .chip { height: 46px; border-radius: 2px; margin-bottom: 9px; }
+  .swatch .lbl { font: 400 .78em var(--mono); color: var(--muted); }
+  .swatch .nm { font-size: .9em; }
+  .chip.morph { animation: morph 5.6s ease-in-out infinite; }
+  @keyframes morph {
+    0%, 42% { background: #b96760; }
+    58%, 100% { background: #99322c; }
+  }
+  .chip.morph-2 { animation: morph2 5.6s ease-in-out infinite; }
+  @keyframes morph2 {
+    0%, 42% { background: #b8916b; }
+    58%, 100% { background: #c28d76; }
+  }
+  .chip.morph-3 { animation: morph3 5.6s ease-in-out infinite; }
+  @keyframes morph3 {
+    0%, 42% { background: #527c9f; }
+    58%, 100% { background: #3b4d6e; }
+  }
+
+  .lung { transform-origin: 50% 100%; animation: lung 4.3s ease-in-out infinite; }
+  @keyframes lung { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.14, 1.2); } }
+  .wave-dash { stroke-dasharray: 7 9; animation: crawl 2.4s linear infinite; }
+  @keyframes crawl { to { stroke-dashoffset: -32; } }
+
+  /* ---------- slide 5: how it is used ---------- */
+  .steps { display: grid; gap: 8px; }
+  .step {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 12px 16px;
+  }
+  .step .key {
+    font: 600 .8em var(--mono);
+    color: var(--trace);
+    border: 1px solid #1d4438;
+    background: #0c1a17;
+    border-radius: 3px;
+    padding: 3px 8px;
+    min-width: 34px;
+    text-align: center;
+  }
+  .step .ic { width: 30px; height: 30px; display: grid; place-items: center; }
+  .step b { font-weight: 600; }
+  .step span { color: var(--muted); font-size: .92em; }
+
+  /* ---------- slide 6: under the hood ---------- */
+  .specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .spec { border: 1px solid var(--line); background: var(--panel); padding: 15px 17px; }
+  .spec dt { font: 400 .76em var(--mono); color: var(--trace); letter-spacing: .06em; }
+  .spec dd { margin: 6px 0 0; font-size: .93em; color: var(--muted); }
+  .spec dd b { color: var(--ink); font-weight: 600; }
+  .source { border-top: 1px solid var(--line); padding-top: 16px; color: var(--dim); font-size: .86em; }
+  .source a { color: var(--muted); }
+
+  /* ---------- vitals strip ---------- */
+  .vitals {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: stretch;
+    border-top: 1px solid var(--line);
+    background: linear-gradient(180deg, #080e11, #060a0c);
+  }
+  .traces { position: relative; min-height: 96px; }
+  .traces canvas { display: block; width: 100%; height: 100%; }
+  .traces .tag {
+    position: absolute;
+    inset-inline-start: 12px;
+    font: 600 .68em var(--mono);
+    letter-spacing: .12em;
+  }
+  .tag.ecg { top: 8px; color: var(--trace); }
+  .tag.resp { top: 52px; color: var(--vein); }
+
+  .numbers { display: flex; gap: 0; border-inline-start: 1px solid var(--line); }
+  .num { padding: 12px clamp(12px, 2vw, 24px); display: grid; align-content: center; gap: 2px; min-width: 92px; }
+  .num + .num { border-inline-start: 1px solid var(--line); }
+  .num .k { font: 600 .66em var(--mono); letter-spacing: .1em; color: var(--dim); }
+  .num .v { font: 600 1.55em/1 var(--mono); font-variant-numeric: tabular-nums; }
+  .num.hr .v { color: var(--trace); }
+  .num.rr .v { color: var(--vein); }
+  .num.pt .v { color: var(--bone); }
+
+  .controls { display: flex; align-items: center; gap: 8px; padding-inline: clamp(12px, 2vw, 20px); border-inline-start: 1px solid var(--line); }
+  .controls button {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--ink);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color .18s, background .18s;
+  }
+  .controls button:hover { border-color: #2b4048; background: var(--panel-2); }
+  .controls .count { font: 400 .8em var(--mono); color: var(--dim); min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; }
+
+  .progress { height: 2px; background: var(--line); }
+  .progress i { display: block; height: 100%; background: var(--trace); width: 0; transition: width .35s ease; }
+
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .heart-frame { order: -1; }
+    .bar .who { display: none; }
+    .numbers .num.pt { display: none; }
+  }
+  @media (max-width: 620px) {
+    .chapters { display: none; }
+    .traces { min-height: 78px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="deck" dir="rtl">
+  <header class="bar">
+    <div class="mark"><span class="pip"></span> أطلس التشريح الحي</div>
+    <nav class="chapters" aria-label="فصول العرض">
+      <button type="button" data-go="0" aria-current="true">١ التعريف</button>
+      <button type="button" data-go="1">٢ ما هو</button>
+      <button type="button" data-go="2">٣ الأجهزة</button>
+      <button type="button" data-go="3">٤ النسيج الحي</button>
+      <button type="button" data-go="4">٥ الاستخدام</button>
+      <button type="button" data-go="5">٦ تحت الغطاء</button>
+    </nav>
+    <div class="who">
+      نظام تشريح ثلاثي الأبعاد · جامعة العلوم والتكنولوجيا الحديثة<br>
+      <b>د. سمية عبد الله عبد</b> · بمساعدة المهندس صلاح عبد الله عبد
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+
+    <!-- 1 -->
+    <section class="slide" data-active="true" aria-label="التعريف">
+      <div class="hero">
+        <div>
+          <p class="eyebrow rise">ATLAS · VITALS · LIVE</p>
+          <h1 class="rise">جسدٌ واحد، 2,219 قطعة، ينبض أمام الطالب</h1>
+          <p class="lede rise">
+            أطلس تشريحي تفاعلي لطلاب الطب البشري: نموذج ذكوري كامل يُفكَّك ويُعاد تركيبه في المتصفح،
+            بأسماء عربية موثّقة، والآن <strong>بألوان الأنسجة الحقيقية وحركتها الحية</strong>.
+          </p>
+          <p class="credit rise">
+            إعداد <b>د. سمية عبد الله عبد</b> — كلية الطب البشري، جامعة العلوم والتكنولوجيا الحديثة.
+          </p>
+        </div>
+
+        <figure class="heart-frame rise">
+          <svg viewBox="0 0 300 210" width="100%" style="height:auto" role="img" aria-label="رسم لقلب نابض مع أثر تخطيط القلب">
+            <g class="beat">
+              <path d="M150 176 C 96 140, 60 112, 60 80 C 60 54, 80 40, 100 40 C 120 40, 138 52, 150 70 C 162 52, 180 40, 200 40 C 220 40, 240 54, 240 80 C 240 112, 204 140, 150 176 Z"
+                    fill="#7d211c" stroke="#cf3a2c" stroke-width="2"></path>
+              <path d="M150 70 C 138 96, 132 126, 150 176" fill="none" stroke="#e46a55" stroke-width="2" opacity=".55"></path>
+              <path d="M104 52 C 122 60, 132 78, 134 96" fill="none" stroke="#e4b0a3" stroke-width="2.5" opacity=".5"></path>
+              <path d="M196 52 C 178 60, 168 78, 166 96" fill="none" stroke="#5081a6" stroke-width="2.5" opacity=".55"></path>
+            </g>
+            <path class="wave-dash" d="M8 196 H 292" fill="none" stroke="#3ad39c" stroke-width="1.4" opacity=".5"></path>
+          </svg>
+          <figcaption><span>CARDIAC CYCLE 0.86 s</span><span>≈ 70 نبضة/دقيقة</span></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide" aria-label="ما هو النظام">
+      <p class="eyebrow rise">ما هو النظام</p>
+      <h2 class="rise">أطلس واحد يعمل في المتصفح، بلا تثبيت ولا حساب</h2>
+      <div class="readouts rise">
+        <div class="readout"><div class="n" data-count="2219">0</div><div class="k">قطعة تشريحية مجسّمة</div></div>
+        <div class="readout"><div class="n" data-count="15">0</div><div class="k">جهازاً تُظهر وتُخفى</div></div>
+        <div class="readout"><div class="n" data-count="3432">0</div><div class="k">بنية باسمها الكامل</div></div>
+        <div class="readout"><div class="n" data-count="2.3" data-suffix=" M">0</div><div class="k">مثلث في المشهد</div></div>
+      </div>
+      <div class="pair rise">
+        <div class="note">
+          <h3>المصدر تشريحي، لا فني</h3>
+          <p>المجسّمات من قاعدة BodyParts3D اليابانية، وكل قطعة مربوطة بمعرّفها في مصطلحات FMA، فما يراه الطالب مطابق للمرجع لا لتخيّل رسّام.</p>
+        </div>
+        <div class="note">
+          <h3>عربي أولاً</h3>
+          <p>الواجهة والأسماء بالعربية، ويظهر الاسم اللاتيني حين لا يوجد مقابل عربي موثّق — لا مصطلح مُخترع.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide" aria-label="الأجهزة">
+      <p class="eyebrow rise">الطبقات</p>
+      <h2 class="rise">خمسة عشر جهازاً، كل واحد مفتاح يُطفأ ويُشعل</h2>
+      <p class="lede rise">اعرض الهيكل وحده، أو الشرايين فوق الأعضاء، أو اعزل بنية واحدة وأدر الكاميرا حولها.</p>
+      <div class="systems rise" id="systems"></div>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide" aria-label="النسيج الحي">
+      <p class="eyebrow rise">الجديد</p>
+      <h2 class="rise">النسيج الحي: اللون كما هو في الجسد، والحركة كما هي في الوظيفة</h2>
+      <p class="lede rise">
+        كانت كل قطعة تأخذ لون جهازها التعليمي. الآن تأخذ <strong>لون نسيجها الحقيقي</strong>،
+        وتتحرك بالإيقاع الذي تعمل به: عضل القلب ينقبض، القصبات تتسع، الأمعاء تتموّج.
+      </p>
+      <div class="swatches rise">
+        <div class="swatch"><div class="chip morph"></div><div class="lbl">CARDIAC</div><div class="nm">عضلة القلب</div></div>
+        <div class="swatch"><div class="chip morph-2"></div><div class="lbl">JEJUNUM</div><div class="nm">الصائم</div></div>
+        <div class="swatch"><div class="chip morph-3"></div><div class="lbl">VEIN</div><div class="nm">وريد</div></div>
+        <div class="swatch" style="display:grid; align-content:center">
+          <div class="lbl">MODE</div>
+          <div class="nm">مفتاح واحد <b style="font-family:var(--mono)">V</b> يعيد الألوان التعليمية المسطّحة</div>
+        </div>
+      </div>
+      <div class="tissue rise">
+        <div class="card">
+          <h3>نبض</h3><span class="rate">0.86 s · systole → diastole</span>
+          <figure>
+            <svg viewBox="0 0 160 60" width="160" height="60" role="img" aria-label="جدران البطين تنقبض ثم ترتخي">
+              <circle cx="80" cy="30" r="24" fill="none" stroke="#cf3a2c" stroke-width="2" opacity=".35"></circle>
+              <circle class="beat" cx="80" cy="30" r="18" fill="#7d211c" stroke="#cf3a2c" stroke-width="2"></circle>
+            </svg>
+          </figure>
+          <p>جدران الأذينين والبطينين والصمّامات تنقبض على دورة قلبية كاملة، والشرايين تحمل موجة الضغط متأخرةً بمقدار بعدها عن القلب.</p>
+        </div>
+        <div class="card">
+          <h3>تنفّس</h3><span class="rate">4.3 s · ≈ 14 نفساً/دقيقة</span>
+          <figure>
+            <svg viewBox="0 0 160 60" width="160" height="60" role="img" aria-label="الشجرة القصبية تتسع مع الشهيق">
+              <g class="lung">
+                <path d="M80 8 V 30 M80 30 C 62 34, 52 42, 48 54 M80 30 C 98 34, 108 42, 112 54"
+                      fill="none" stroke="#cf979a" stroke-width="3" stroke-linecap="round"></path>
+                <path d="M62 40 C 56 44, 54 50, 54 56 M98 40 C 104 44, 106 50, 106 56"
+                      fill="none" stroke="#cf979a" stroke-width="2" opacity=".7" stroke-linecap="round"></path>
+              </g>
+            </svg>
+          </figure>
+          <p>القصبات والأضلاع تتسع مع الشهيق، والحجاب الحاجز يهبط ويتسطّح ثم يعود.</p>
+        </div>
+        <div class="card">
+          <h3>تمعّج</h3><span class="rate">wave · 1.5 rad/s</span>
+          <figure>
+            <svg viewBox="0 0 160 60" width="160" height="60" role="img" aria-label="موجة تمعّج تسري في أنبوب معوي">
+              <path d="M10 30 Q 30 10, 50 30 T 90 30 T 130 30 T 170 30" fill="none" stroke="#bd8a74" stroke-width="3" stroke-linecap="round" class="wave-dash" style="stroke-dasharray:14 8; animation-duration:1.6s"></path>
+              <path d="M10 44 H 150" fill="none" stroke="#5b4a42" stroke-width="1" opacity=".6"></path>
+            </svg>
+          </figure>
+          <p>حلقة انقباض تسري على طول المريء والمعدة والأمعاء والحالبين، مع وهج خفيف يتبع اتجاه السريان.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="slide" aria-label="الاستخدام">
+      <p class="eyebrow rise">في الحصة</p>
+      <h2 class="rise">خمس حركات تكفي لدرس كامل</h2>
+      <div class="steps rise">
+        <div class="step">
+          <span class="key">/</span>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7f959d" stroke-width="1.8"><circle cx="11" cy="11" r="6"></circle><path d="M15.5 15.5 L20 20"></path></svg></span>
+          <div><b>ابحث</b> <span>— اكتب «القلب» أو «الكبد»، فينتقل النموذج إلى البنية ويعزلها.</span></div>
+        </div>
+        <div class="step">
+          <span class="key">نقرة</span>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7f959d" stroke-width="1.8"><path d="M6 4 L6 16 L9.5 13 L12 19 L14.5 18 L12 12 L17 12 Z"></path></svg></span>
+          <div><b>انقر أي قطعة</b> <span>— يظهر اسمها وجهازها وشرح مبسّط لوظيفتها.</span></div>
+        </div>
+        <div class="step">
+          <span class="key">I</span>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7f959d" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="1"></rect><rect x="9" y="9" width="6" height="6" fill="#3ad39c" stroke="none"></rect></svg></span>
+          <div><b>اعزل</b> <span>— أخفِ كل ما عدا المحدد، ودُر حوله من كل الجهات.</span></div>
+        </div>
+        <div class="step">
+          <span class="key">↔</span>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7f959d" stroke-width="1.8"><path d="M3 12 H 21"></path><circle cx="9" cy="12" r="3" fill="#131d22"></circle></svg></span>
+          <div><b>فكّك التشريح</b> <span>— مزلاج واحد يفرد الجسد كله إلى لوحة مرتّبة، ثم يعيده.</span></div>
+        </div>
+        <div class="step">
+          <span class="key">Q</span>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7f959d" stroke-width="1.8"><path d="M12 3 L21 8 L12 13 L3 8 Z"></path><path d="M7 10.5 V 15 C 7 15, 9 17.5, 12 17.5 C 15 17.5, 17 15, 17 15 V 10.5"></path></svg></span>
+          <div><b>اختبر نفسك</b> <span>— وضع الاختبار يخفي الأسماء، والبطاقات والمفضلة تحفظ ما يُراجَع.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="slide" aria-label="تحت الغطاء">
+      <p class="eyebrow rise">تحت الغطاء</p>
+      <h2 class="rise">لماذا يعمل بسلاسة على حاسوب الطالب</h2>
+      <dl class="specs rise">
+        <div class="spec"><dt>ONE PASS</dt><dd>كل قطع الجهاز الواحد تُدمج في رسمة واحدة؛ الإظهار والإخفاء والتفكيك يتم داخل <b>مظلّل الرأس</b> لا بإعادة بناء المشهد.</dd></div>
+        <div class="spec"><dt>TEXEL PER PART</dt><dd>لكل قطعة بكسل واحد يحمل لون نسيجها وخشونته وشفافيته، وآخر يحمل <b>نوع حركتها وسعتها وطورها</b>.</dd></div>
+        <div class="spec"><dt>STREAMING</dt><dd>النموذج يصل مضغوطاً على دفعات مع شريط تقدّم، فيبدأ العرض قبل اكتمال التحميل.</dd></div>
+        <div class="spec"><dt>NO TEXTURES</dt><dd>تفاصيل السطح تُولَّد بضجيج رياضي داخل المظلّل: لا صور تُحمَّل، ولا يزيد حجم النموذج.</dd></div>
+      </dl>
+      <p class="source">
+        المجسّمات: BodyParts3D / Anatomography — قاعدة بيانات مركز معلومات الحمض النووي، اليابان، برخصة CC BY-SA 2.1 JP.
+        المصطلحات العربية موثّقة مقابل معرّفات FMA. العرض والتطوير: د. سمية عبد الله عبد، بمساعدة المهندس صلاح عبد الله عبد —
+        جامعة العلوم والتكنولوجيا الحديثة.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="progress"><i id="progress"></i></div>
+    <div class="vitals">
+      <div class="traces">
+        <span class="tag ecg">ECG II</span>
+        <span class="tag resp">RESP</span>
+        <canvas id="trace" width="1200" height="192" aria-hidden="true"></canvas>
+      </div>
+      <div class="numbers">
+        <div class="num hr"><span class="k">HR</span><span class="v" id="hr">70</span></div>
+        <div class="num rr"><span class="k">RR</span><span class="v" id="rr">14</span></div>
+        <div class="num pt"><span class="k">PARTS</span><span class="v">2219</span></div>
+      </div>
+      <div class="controls">
+        <button type="button" id="prev" aria-label="الشريحة السابقة" title="السابق">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5 L8 12 L15 19"></path></svg>
+        </button>
+        <span class="count" id="count">١ / ٦</span>
+        <button type="button" id="next" aria-label="الشريحة التالية" title="التالي">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5 L16 12 L9 19"></path></svg>
+        </button>
+        <button type="button" id="play" aria-label="تشغيل العرض التلقائي" title="عرض تلقائي">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" id="playIcon"><path d="M8 5 L19 12 L8 19 Z"></path></svg>
+        </button>
+        <button type="button" id="full" aria-label="ملء الشاشة" title="ملء الشاشة">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9 V4 H9 M15 4 H20 V9 M20 15 V20 H15 M9 20 H4 V15"></path></svg>
+        </button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- systems grid: the same fifteen layers the atlas ships with ---------- */
+  const SYSTEMS = [
+    ['الشرايين', '#c05245', 635], ['العضلات', '#a85b50', 402], ['الأوردة', '#527c9f', 400],
+    ['الهيكل العظمي', '#e2d9ba', 296], ['الجهاز العصبي', '#d8b565', 139], ['الجهاز التنفسي', '#b98991', 119],
+    ['الجهاز الهضمي', '#b8916b', 97], ['أعضاء الحس', '#b0c8ce', 45], ['النسيج الضام', '#aec3bb', 40],
+    ['القلب', '#b96760', 23], ['الجهاز البولي', '#b47961', 6], ['سطح الجسم', '#ba9b7d', 5],
+    ['الجهاز التناسلي', '#bda098', 5], ['الغدد الصماء', '#c5a09a', 4], ['الجهاز اللمفي', '#879f7c', 3],
+  ];
+  const grid = document.getElementById('systems');
+  grid.innerHTML = SYSTEMS.map(([name, color, count]) =>
+    `<div class="sys"><span class="dot" style="background:${color}"></span><span class="nm">${name}</span><span class="ct">${count}</span></div>`
+  ).join('');
+  const chips = [...grid.children];
+  let lit = 0;
+  if (!reduced) setInterval(() => {
+    chips.forEach((c) => c.classList.remove('lit'));
+    chips[lit].classList.add('lit');
+    lit = (lit + 1) % chips.length;
+  }, 900);
+
+  /* ---------- counters ---------- */
+  function runCounters(slide) {
+    slide.querySelectorAll('[data-count]').forEach((el) => {
+      const target = Number(el.dataset.count);
+      const suffix = el.dataset.suffix ?? '';
+      const decimals = target % 1 ? 1 : 0;
+      if (reduced) { el.textContent = target.toFixed(decimals) + suffix; return; }
+      const started = performance.now();
+      const tick = (now) => {
+        const t = Math.min(1, (now - started) / 900);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = (target * eased).toFixed(decimals) + suffix;
+        if (t < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+
+  /* ---------- slides ---------- */
+  const slides = [...document.querySelectorAll('.slide')];
+  const marks = [...document.querySelectorAll('.chapters button')];
+  const progress = document.getElementById('progress');
+  const count = document.getElementById('count');
+  const arabic = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
+  let index = 0;
+
+  function show(next) {
+    index = (next + slides.length) % slides.length;
+    slides.forEach((s, i) => s.dataset.active = String(i === index));
+    marks.forEach((m, i) => m.setAttribute('aria-current', String(i === index)));
+    progress.style.width = ((index + 1) / slides.length * 100) + '%';
+    count.textContent = `${arabic(index + 1)} / ${arabic(slides.length)}`;
+    if (index === 1) runCounters(slides[1]);
+  }
+
+  document.getElementById('next').onclick = () => show(index + 1);
+  document.getElementById('prev').onclick = () => show(index - 1);
+  marks.forEach((m) => m.onclick = () => show(Number(m.dataset.go)));
+  addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === ' ' || e.key === 'PageDown') { show(index + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowRight' || e.key === 'PageUp') { show(index - 1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (/^[1-6]$/.test(e.key)) show(Number(e.key) - 1);
+  });
+
+  let touchX = 0;
+  const stage = document.getElementById('stage');
+  stage.addEventListener('touchstart', (e) => touchX = e.touches[0].clientX, {passive: true});
+  stage.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 60) show(index + (dx > 0 ? 1 : -1));
+  }, {passive: true});
+
+  const play = document.getElementById('play');
+  const playIcon = document.getElementById('playIcon');
+  let timer = 0;
+  play.onclick = () => {
+    if (timer) {
+      clearInterval(timer); timer = 0;
+      playIcon.innerHTML = '<path d="M8 5 L19 12 L8 19 Z"></path>';
+      play.setAttribute('aria-label', 'تشغيل العرض التلقائي');
+    } else {
+      timer = setInterval(() => show(index + 1), 12000);
+      playIcon.innerHTML = '<path d="M7 5 H10 V19 H7 Z M14 5 H17 V19 H14 Z"></path>';
+      play.setAttribute('aria-label', 'إيقاف العرض التلقائي');
+    }
+  };
+  document.getElementById('full').onclick = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen?.();
+  };
+
+  show(0);
+  runCounters(slides[1]);
+
+  /* ---------- vitals: a real ECG-shaped trace and a respiratory wave ---------- */
+  const canvas = document.getElementById('trace');
+  const ctx = canvas.getContext('2d');
+  const hrOut = document.getElementById('hr');
+  const rrOut = document.getElementById('rr');
+  const CARDIAC = 0.86, RESPIRATORY = 4.3;
+
+  /** One lead-II beat, sampled on a phase from 0 to 1. */
+  function ecg(p) {
+    const hump = (centre, width, height) => height * Math.exp(-Math.pow((p - centre) / width, 2));
+    let v = hump(0.14, 0.028, 0.16);            // P
+    v -= hump(0.205, 0.008, 0.22);              // Q
+    v += hump(0.225, 0.010, 1.00);              // R
+    v -= hump(0.255, 0.014, 0.30);              // S
+    v += hump(0.40, 0.045, 0.26);               // T
+    return v;
+  }
+
+  function fit() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(320, Math.floor(rect.width * devicePixelRatio));
+    canvas.height = Math.floor(rect.height * devicePixelRatio);
+  }
+  fit();
+  addEventListener('resize', fit);
+
+  const SPEED = 90; // pixels per second of trace
+  let start = performance.now();
+
+  function draw(now) {
+    const t = (now - start) / 1000;
+    const w = canvas.width, h = canvas.height, s = devicePixelRatio;
+    ctx.clearRect(0, 0, w, h);
+
+    const baselines = [h * 0.28, h * 0.70];
+    const sweep = (t * SPEED * s) % w;
+
+    ctx.lineWidth = 1.7 * s;
+    ctx.lineJoin = 'round';
+
+    for (let lane = 0; lane < 2; lane++) {
+      ctx.beginPath();
+      ctx.strokeStyle = lane === 0 ? '#3ad39c' : '#5081a6';
+      for (let x = 0; x < w; x += s) {
+        // The trace is drawn right to left, the way an RTL monitor sweeps.
+        const age = ((w - x) + (w - sweep)) % w / (SPEED * s);
+        const value = lane === 0
+          ? ecg((t - age) / CARDIAC % 1) * h * 0.20
+          : Math.sin((t - age) / RESPIRATORY * Math.PI * 2) * h * 0.105;
+        const y = baselines[lane] - value;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // The erase bar the sweep leaves behind.
+    ctx.clearRect(w - sweep - 14 * s, 0, 14 * s, h);
+
+    if (!reduced) requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  if (!reduced) setInterval(() => {
+    // Small, plausible drift so the numbers read as measured, not printed.
+    hrOut.textContent = 68 + Math.round(Math.random() * 4);
+    rrOut.textContent = 13 + Math.round(Math.random() * 2);
+  }, 3400);
+</script>
