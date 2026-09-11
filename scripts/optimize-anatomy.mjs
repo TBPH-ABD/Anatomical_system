@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import {MeshoptSimplifier} from 'meshoptimizer';
 await MeshoptSimplifier.ready;
-const name=process.argv[2]??'atlas.json',prefix=name.includes('female')?'female':'body';
+const name=process.argv[2]??'model.json',prefix=name.includes('female')?'female':'body';
 const dir=new URL('../public/models/',import.meta.url),manifest=JSON.parse(fs.readFileSync(new URL(name,dir),'utf8'));
 const originals=manifest.chunks.map(c=>c.url.split('/').pop());
 if(manifest.optimized)throw new Error('Already optimized. Re-run the source converter first.');

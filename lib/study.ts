@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useState} from 'react';
 
-/** A structure the student saved, stored by atlas identifier so the record
+/** A structure the student saved, stored by model identifier so the record
  * survives any change to the displayed name. */
 export interface SavedStructure {
   id: string;
@@ -29,11 +29,14 @@ export interface StudyState {
 }
 
 const EMPTY: StudyState = {favorites: [], lists: [], cards: []};
-const KEY = 'atlas.study.v1';
+const KEY = 'anatomy.study.v1';
+/** The key this store used before the rename; read once so a student who
+ * saved structures earlier does not lose them. */
+const FORMER_KEY = 'atlas.study.v1';
 
 function read(): StudyState {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY) ?? localStorage.getItem(FORMER_KEY);
     if (!raw) return EMPTY;
     const parsed = JSON.parse(raw) as Partial<StudyState>;
     return {

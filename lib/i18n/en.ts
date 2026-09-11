@@ -4,7 +4,7 @@ export const en = {
   meta: {
     title: '3D Anatomy System',
     description:
-      'An interactive atlas of the human body. Explore named anatomical structures, reveal organ systems, and inspect individual parts in 3D.',
+      'An interactive 3D model of the human body. Explore named anatomical structures, reveal organ systems, and inspect individual parts in 3D.',
     languageName: 'English',
     switchTo: 'العربية',
     switchLabel: 'Switch language',
@@ -19,7 +19,7 @@ export const en = {
   actions: {
     search: 'Find a structure',
     searchAria: 'Search anatomy',
-    about: 'About this atlas',
+    about: 'About this model',
     panels: 'Explorer panels',
     close: 'Close',
     quiz: 'Quiz mode',
@@ -115,7 +115,7 @@ export const en = {
   detail: {
     fallbackSystem: 'ANATOMY',
     contextNote: 'System overview · structure identified from source anatomy',
-    reference: 'Atlas reference',
+    reference: 'Model reference',
     selectedPieces: 'Selected pieces',
     system: 'System',
     included: 'Included structures',
@@ -205,7 +205,7 @@ export const en = {
     scopeLabel: 'Question pool',
     scopeVisible: 'Visible systems',
     scopeFavorites: 'Favorites',
-    scopeAll: 'Whole atlas',
+    scopeAll: 'Whole model',
     empty: 'No structures available for this pool. Turn on a system or add favorites first.',
     restart: 'Restart',
     tapPrompt: 'Tap the structure in the 3D view.',
@@ -267,7 +267,7 @@ export const en = {
     views: 'Front / side / back / three-quarter view',
   },
   errors: {
-    atlas: 'The anatomy catalogue could not be loaded.',
+    model: 'The anatomy catalogue could not be loaded.',
     chunk: 'An anatomy file could not be loaded.',
     incomplete: 'An anatomy file was incomplete. Please reload the viewer.',
     assemble: 'Could not assemble anatomy geometry.',

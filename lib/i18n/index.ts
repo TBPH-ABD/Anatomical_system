@@ -9,7 +9,9 @@ export type {Messages} from './en';
 
 const BUNDLES: Record<Locale, Translation<Messages>> = {en, ar};
 const DIRECTION: Record<Locale, Direction> = {ar: 'rtl', en: 'ltr'};
-const STORAGE_KEY = 'atlas.locale';
+const STORAGE_KEY = 'anatomy.locale';
+/** The key used before the rename, still read so a chosen language survives. */
+const FORMER_STORAGE_KEY = 'atlas.locale';
 
 /** Dot-separated paths into the message bundle, e.g. `detail.isolate`. */
 type Leaves<T> = T extends string ? '' : {[K in keyof T & string]: T[K] extends string ? K : `${K}.${Leaves<T[K]>}`}[keyof T & string];
@@ -24,7 +26,7 @@ function lookup(bundle: unknown, key: string): string | undefined {
   return typeof node === 'string' ? node : undefined;
 }
 
-/** Western Arabic digits everywhere: they match the atlas identifiers students
+/** Western Arabic digits everywhere: they match the model identifiers students
  * read alongside them, and Arabic medical curricula use them too. */
 const NUMBERS = new Intl.NumberFormat('en-US');
 export const formatNumber = (value: number) => NUMBERS.format(value);
@@ -44,7 +46,7 @@ export function detectLocale(): Locale {
   const fromUrl = new URLSearchParams(location.search).get('lang');
   if (fromUrl === 'ar' || fromUrl === 'en') return fromUrl;
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(FORMER_STORAGE_KEY);
     if (stored === 'ar' || stored === 'en') return stored;
   } catch {
     /* Private browsing modes can refuse storage; the Arabic default still applies. */

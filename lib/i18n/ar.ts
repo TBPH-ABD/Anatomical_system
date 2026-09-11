@@ -7,7 +7,7 @@ export const ar: Translation<Messages> = {
   meta: {
     title: 'نظام تشريح ثلاثي الأبعاد',
     description:
-      'أطلس تفاعلي لجسم الإنسان. استكشف البنى التشريحية المسماة، وأظهر أجهزة الجسم، وافحص كل جزء في ثلاثة أبعاد.',
+      'نموذج تشريحي تفاعلي لجسم الإنسان. استكشف البنى التشريحية المسماة، وأظهر أجهزة الجسم، وافحص كل جزء في ثلاثة أبعاد.',
     languageName: 'العربية',
     switchTo: 'English',
     switchLabel: 'تغيير اللغة',
@@ -22,7 +22,7 @@ export const ar: Translation<Messages> = {
   actions: {
     search: 'ابحث عن بنية',
     searchAria: 'البحث في التشريح',
-    about: 'عن هذا الأطلس',
+    about: 'عن هذا النموذج',
     panels: 'لوحات الاستكشاف',
     close: 'إغلاق',
     quiz: 'وضع الاختبار',
@@ -118,7 +118,7 @@ export const ar: Translation<Messages> = {
   detail: {
     fallbackSystem: 'تشريح',
     contextNote: 'نظرة عامة على الجهاز · البنية مأخوذة من المصدر التشريحي',
-    reference: 'معرّف الأطلس',
+    reference: 'معرّف النموذج',
     selectedPieces: 'القطع المحددة',
     system: 'الجهاز',
     included: 'البنى المتضمنة',
@@ -209,7 +209,7 @@ export const ar: Translation<Messages> = {
     scopeLabel: 'مصدر الأسئلة',
     scopeVisible: 'الأجهزة الظاهرة',
     scopeFavorites: 'المفضلة',
-    scopeAll: 'الأطلس كامل',
+    scopeAll: 'النموذج كامل',
     empty: 'لا توجد بنى في هذا المصدر. شغّل جهازاً أو أضف بنى للمفضلة أولاً.',
     restart: 'إعادة البدء',
     tapPrompt: 'انقر على البنية في العرض ثلاثي الأبعاد.',
@@ -271,7 +271,7 @@ export const ar: Translation<Messages> = {
     views: 'عرض أمامي / جانبي / خلفي / ثلاثة أرباع',
   },
   errors: {
-    atlas: 'تعذر تحميل فهرس التشريح.',
+    model: 'تعذر تحميل فهرس التشريح.',
     chunk: 'تعذر تحميل أحد ملفات التشريح.',
     incomplete: 'أحد ملفات التشريح غير مكتمل. أعد تحميل العارض.',
     assemble: 'تعذر تركيب الشكل الهندسي للتشريح.',

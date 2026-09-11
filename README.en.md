@@ -19,7 +19,7 @@ An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui, wi
 
 ## Study tools
 
-- **Quiz mode** hides the name and asks you to find the structure on the model, scoring answers and streaks. The question pool can be the visible systems, your favorites, or the whole atlas.
+- **Quiz mode** hides the name and asks you to find the structure on the model, scoring answers and streaks. The question pool can be the visible systems, your favorites, or the whole model.
 - **Flashcards** for any structure, kept in the browser and exportable as CSV or as a tab-separated file that Anki imports directly. Both the Arabic and English names travel with each card.
 - **Labels** pin the largest visible structures with leader lines that cannot cross: each side of the screen keeps its anchors in vertical order.
 - **Favorites and custom lists** (for example "امتحان الأطراف العلوية") to build a revision set.
@@ -31,8 +31,8 @@ An interactive 3D anatomy explorer built with React, Three.js, and shadcn/ui, wi
 ## Arabic interface and terminology
 
 - The interface ships in Arabic (default) and English. `lib/i18n/en.ts` defines the message set; every other locale is typed against it, so a missing key fails `npm run check`. `dir`/`lang` are set on the document root and the layout uses logical CSS properties, so only the interface mirrors — the 3D scene never flips.
-- Headings use Arial; body text uses IBM Plex Sans Arabic with Noto Sans Arabic as a fallback, loaded with `font-display: swap`. Numbers stay Western Arabic (1234) to match the atlas identifiers beside them.
-- Anatomical names live in [`data/anatomy-terms-ar.json`](data/anatomy-terms-ar.json), keyed by the atlas concept or mesh identifier — never by English text — with `ar`, `en`, and where useful `la` fields.
+- Headings use Arial; body text uses IBM Plex Sans Arabic with Noto Sans Arabic as a fallback, loaded with `font-display: swap`. Numbers stay Western Arabic (1234) to match the model identifiers beside them.
+- Anatomical names live in [`data/anatomy-terms-ar.json`](data/anatomy-terms-ar.json), keyed by the model concept or mesh identifier — never by English text — with `ar`, `en`, and where useful `la` fields.
 - Terms are built from a curated lexicon (`scripts/anatomy-lexicon.mjs`) that follows the Arabic equivalents of Terminologia Anatomica used in Arabic medical curricula. A name is translated only when every word of it is covered; **5,574 of 5,666 names (97.8% of concepts)** currently are. Anything else falls back to the English or Latin name rather than inventing one.
 - The detail panel always shows the Arabic name together with the English one (and the Latin term when available), because exams are written in English.
 - Search matches Arabic, English, and Latin at once, normalising hamza forms (أ إ آ → ا), tāʾ marbūṭa (ة → ه), alif maqṣūra, and diacritics.
@@ -58,13 +58,13 @@ Open http://localhost:3016. To build the static site, run `npm run build`; the o
 
 ```sh
 npm run check
-node scripts/validate-atlas.mjs
+node scripts/validate-model.mjs
 node scripts/validate-interactions.mjs
 node scripts/validate-terms.mjs
 npm run build
 ```
 
-Validation covers mesh buffers, names and concept membership, nonoverlapping exploded layouts at desktop and mobile aspect ratios, search and inspection contracts, tap-versus-drag handling, share-link round trips, Arabic search normalisation, and the terminology file (every key is a real atlas identifier, every Arabic term is Arabic script, the published copy matches the source, and coverage stays above 95%). Browser interaction checks have exercised selection, system controls, search, isolation, rotation, and 390×844, 320×568, and 844×390 layouts. Phone controls stay clear of the exploded inventory, and isolated structures fit the space above or beside the detail panel. Physical-device performance and real multitouch hardware have not been tested.
+Validation covers mesh buffers, names and concept membership, nonoverlapping exploded layouts at desktop and mobile aspect ratios, search and inspection contracts, tap-versus-drag handling, share-link round trips, Arabic search normalisation, and the terminology file (every key is a real model identifier, every Arabic term is Arabic script, the published copy matches the source, and coverage stays above 95%). Browser interaction checks have exercised selection, system controls, search, isolation, rotation, and 390×844, 320×568, and 844×390 layouts. Phone controls stay clear of the exploded inventory, and isolated structures fit the space above or beside the detail panel. Physical-device performance and real multitouch hardware have not been tested.
 
 ## The explain button
 

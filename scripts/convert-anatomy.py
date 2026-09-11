@@ -41,5 +41,5 @@ for element in metadata['elements']:
     total_triangles+=len(indices)//3
 (out/f'anatomy-{chunk}.bin').write_bytes(blob);chunks.append({'url':f'/models/anatomy-{chunk}.bin','bytes':len(blob)})
 manifest={'version':'BodyParts3D 4.0','parts':parts,'chunks':chunks,'triangles':total_triangles,'concepts':[{k:v for k,v in c.items() if k in ['id','name','elements']} for c in metadata['concepts']]}
-(out/'atlas.json').write_text(json.dumps(manifest,separators=(',',':')))
+(out/'model.json').write_text(json.dumps(manifest,separators=(',',':')))
 print(json.dumps({'parts':len(parts),'concepts':len(manifest['concepts']),'triangles':total_triangles,'bytes':sum(c['bytes'] for c in chunks),'chunks':len(chunks),'systems':sorted(set(p['system'] for p in parts))},indent=2))

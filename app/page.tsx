@@ -1,5 +1,5 @@
 import {flushSync} from 'react-dom';
-import {registerAtlasTools} from './agent-tools';
+import {registerModelTools} from './agent-tools';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   Activity,
@@ -29,14 +29,14 @@ import {Switch} from '@/components/ui/switch';
 import {Sheet, SheetContent, SheetTitle, SheetDescription} from '@/components/ui/sheet';
 import {Combobox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem, ComboboxEmpty} from '@/components/ui/combobox';
 import AnatomyScene, {type SceneLabel} from './scene';
-import {DEFAULT_VISIBLE, SYSTEMS, type Atlas, type Concept, type SceneState, type SystemId, type View} from './anatomy';
+import {DEFAULT_VISIBLE, SYSTEMS, type AnatomyModel, type Concept, type SceneState, type SystemId, type View} from './anatomy';
 import {MOTION, tissueFor} from './tissue';
 import {useI18n} from '@/lib/i18n';
 import type {MessageKey} from '@/lib/i18n';
 import {normalizeTerm, useAnatomyTerms} from '@/lib/anatomy-terms';
 import {useStudy, type Flashcard, type SavedStructure} from '@/lib/study';
 import {applyShareState, decodeShareState, shareUrl, type CameraPose} from '@/lib/share-state';
-import {filterAtlas} from '@/lib/hidden-structures';
+import {filterModel} from '@/lib/hidden-structures';
 import {useExplainer} from '@/lib/explain';
 import {Credit} from './ui/credit';
 import {LabelLayer} from './ui/labels';
@@ -60,7 +60,7 @@ export default function Home() {
   const study = useStudy();
   const explainer = useExplainer();
 
-  const [atlas, setAtlas] = useState<Atlas | null>(null);
+  const [model, setModel] = useState<AnatomyModel | null>(null);
   const [state, setState] = useState(initial);
   const [progress, setProgress] = useState(0);
   const [bytes, setBytes] = useState({done: 0, total: 0});
@@ -84,18 +84,18 @@ export default function Home() {
     const shared = decodeShareState(location.search);
     setProgress(0);
     setError('');
-    setAtlas(null);
+    setModel(null);
     setChosen(null);
     setDetails(false);
     setState(applyShareState({...initial, visible: DEFAULT_VISIBLE}, shared ?? {}));
-    fetch('/models/atlas.json', {signal: abort.signal})
+    fetch('/models/model.json', {signal: abort.signal})
       .then((response) => {
-        if (!response.ok) throw new Error('errors.atlas');
+        if (!response.ok) throw new Error('errors.model');
         return response.json();
       })
       .then((data) => {
-        const loaded = filterAtlas(data as Atlas);
-        setAtlas(loaded);
+        const loaded = filterModel(data as AnatomyModel);
+        setModel(loaded);
         const concept = shared?.concept ? loaded.concepts.find((c) => c.id === shared.concept) : undefined;
         if (concept) {
           setChosen(concept);
@@ -106,7 +106,7 @@ export default function Home() {
         if (e.name !== 'AbortError') setError(e.message);
       });
     return () => abort.abort();
-    // The atlas is fetched once; translated error text is resolved at render.
+    // The model is fetched once; translated error text is resolved at render.
   }, []);
 
   useEffect(() => {
@@ -116,17 +116,17 @@ export default function Home() {
     return () => removeEventListener('resize', measure);
   }, []);
 
-  const parts = useMemo(() => new Map(atlas?.parts.map((p) => [p.id, p])), [atlas]);
+  const parts = useMemo(() => new Map(model?.parts.map((p) => [p.id, p])), [model]);
   const counts = useMemo(
-    () => Object.fromEntries(SYSTEMS.map((s) => [s.id, atlas?.parts.filter((p) => p.system === s.id).length ?? 0])),
-    [atlas],
+    () => Object.fromEntries(SYSTEMS.map((s) => [s.id, model?.parts.filter((p) => p.system === s.id).length ?? 0])),
+    [model],
   );
   const activeSystems = SYSTEMS.filter((s) => counts[s.id] > 0);
   const selectedParts = state.selected.map((id) => parts.get(id)).filter((p) => !!p);
   const selected = selectedParts[0];
   const system = SYSTEMS.find((s) => s.id === selected?.system);
   const visibleCount =
-    atlas?.parts.filter((p) => (state.isolate ? state.selected.includes(p.id) : state.visible.includes(p.system) || state.selected.includes(p.id))).length ?? 0;
+    model?.parts.filter((p) => (state.isolate ? state.selected.includes(p.id) : state.visible.includes(p.system) || state.selected.includes(p.id))).length ?? 0;
 
   /** One naming rule for the whole interface: Arabic when verified, otherwise
    * the source name, never a blank and never an invented term. */
@@ -151,14 +151,14 @@ export default function Home() {
   const hasExplanation = useCallback((name: string) => t(`explanations.${name.toLowerCase()}` as MessageKey) !== `explanations.${name.toLowerCase()}`, [t]);
 
   const results = useMemo(() => {
-    if (!atlas) return [];
+    if (!model) return [];
     const term = normalizeTerm(query);
-    if (!term) return STARTERS.map((name) => atlas.concepts.find((c) => c.name.toLowerCase() === name)).filter((x): x is Concept => !!x);
-    return atlas.concepts
+    if (!term) return STARTERS.map((name) => model.concepts.find((c) => c.name.toLowerCase() === name)).filter((x): x is Concept => !!x);
+    return model.concepts
       .filter((c) => terms.haystack(c.id, c.name).includes(term))
       .sort((a, b) => a.name.length - b.name.length)
       .slice(0, 80);
-  }, [atlas, query, terms]);
+  }, [model, query, terms]);
 
   const choose = useCallback((c: Concept) => {
     setChosen(c);
@@ -168,9 +168,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!atlas) return;
-    return registerAtlasTools(atlas, (c) => flushSync(() => choose(c)));
-  }, [atlas, choose]);
+    if (!model) return;
+    return registerModelTools(model, (c) => flushSync(() => choose(c)));
+  }, [model, choose]);
 
   // ---- Quiz -------------------------------------------------------------
   const [quizOn, setQuizOn] = useState(false);
@@ -181,13 +181,13 @@ export default function Home() {
   const [score, setScore] = useState({asked: 0, correct: 0, streak: 0});
 
   const questionPool = useMemo(() => {
-    if (!atlas) return [];
-    const usable = atlas.concepts.filter((c) => c.elements.length > 0 && c.elements.length <= 40);
+    if (!model) return [];
+    const usable = model.concepts.filter((c) => c.elements.length > 0 && c.elements.length <= 40);
     if (pool === 'favorites') return usable.filter((c) => study.favorites.some((f) => f.id === c.id));
     if (pool === 'all') return usable;
     const visible = new Set(state.visible);
     return usable.filter((c) => c.elements.some((id) => visible.has(parts.get(id)?.system as SystemId)));
-  }, [atlas, pool, state.visible, parts, study.favorites]);
+  }, [model, pool, state.visible, parts, study.favorites]);
 
   const nextQuestion = useCallback(() => {
     if (!questionPool.length) {
@@ -255,10 +255,10 @@ export default function Home() {
   const savedEntry: SavedStructure | null = chosen ? {id: chosen.id, name: conceptName(chosen), elements: chosen.elements} : null;
   const openSaved = useCallback(
     (entry: SavedStructure) => {
-      const concept = atlas?.concepts.find((c) => c.id === entry.id);
+      const concept = model?.concepts.find((c) => c.id === entry.id);
       choose(concept ?? {id: entry.id, name: entry.name, elements: entry.elements});
     },
-    [atlas, choose],
+    [model, choose],
   );
 
   const copyShare = useCallback(() => {
@@ -315,10 +315,10 @@ export default function Home() {
     return () => removeEventListener('keydown', key);
   }, [openPanel, reset, savedEntry, state.selected.length, study]);
 
-  const labelName = useCallback((index: number) => (atlas ? partName(atlas.parts[index].id) : ''), [atlas, partName]);
+  const labelName = useCallback((index: number) => (model ? partName(model.parts[index].id) : ''), [model, partName]);
   const hoverName = useCallback(
-    (index: number) => (quizOn || !atlas ? null : partName(atlas.parts[index].id)),
-    [quizOn, atlas, partName],
+    (index: number) => (quizOn || !model ? null : partName(model.parts[index].id)),
+    [quizOn, model, partName],
   );
 
   const explainInput = useCallback(
@@ -352,9 +352,9 @@ export default function Home() {
 
   return (
     <main className="studio" dir={dir}>
-      {atlas && (
+      {model && (
         <AnatomyScene
-          atlas={atlas}
+          model={model}
           state={{...state, inspectorOpen: details && selectedParts.length > 0}}
           onSelect={choosePart}
           onProgress={(value, size) => {
@@ -382,7 +382,7 @@ export default function Home() {
         </div>
         <Credit variant="header" />
         <div className="identity-meta">
-          {t('identity.meta', {count: atlas?.parts.length ?? 2234})} <span>·</span> {t('identity.source')}
+          {t('identity.meta', {count: model?.parts.length ?? 2234})} <span>·</span> {t('identity.source')}
         </div>
       </header>
 
@@ -583,7 +583,7 @@ export default function Home() {
           favorites={study.favorites}
           lists={study.lists}
           nameFor={(entry) => {
-            const concept = atlas?.concepts.find((c) => c.id === entry.id);
+            const concept = model?.concepts.find((c) => c.id === entry.id);
             return concept ? conceptName(concept) : entry.name;
           }}
           onOpen={openSaved}
@@ -707,7 +707,7 @@ export default function Home() {
           <div>
             <strong>{t('loading.title')}</strong>
             <span>
-              {t('loading.detail', {percent: n(progress), count: atlas?.parts.length ?? 2234})}
+              {t('loading.detail', {percent: n(progress), count: model?.parts.length ?? 2234})}
               {bytes.total > 0 && ` · ${t('loading.downloaded', {done: megabytes(bytes.done), total: megabytes(bytes.total)})}`}
             </span>
             <div className="loading-track">
@@ -730,13 +730,13 @@ export default function Home() {
           <img className="splash-logo" src="/university-logo.png" alt={t('splash.logoAlt')} />
           <div className="splash-card glass">
             <Credit variant="splash" />
-            {/* A phone renders the atlas correctly but small; the student is
+            {/* A phone renders the model correctly but small; the student is
                 told once, on the way in, that a larger screen reads better. */}
             <p className="splash-notice">
               <TabletSmartphone size={16} /> {t('splash.smallScreen')}
             </p>
-            <Button className="primary-action" onClick={() => setSplash(false)} disabled={!atlas}>
-              {atlas ? t('splash.enter') : t('splash.preparing')}
+            <Button className="primary-action" onClick={() => setSplash(false)} disabled={!model}>
+              {model ? t('splash.enter') : t('splash.preparing')}
             </Button>
           </div>
           <img className="splash-logo" src="/university-logo.png" alt="" aria-hidden="true" />

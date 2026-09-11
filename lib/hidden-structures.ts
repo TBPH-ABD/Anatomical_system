@@ -1,4 +1,4 @@
-import type {Atlas} from '@/app/anatomy';
+import type {AnatomyModel} from '@/app/anatomy';
 
 /** External genital structures are left out of this teaching build at the
  * request of the course. Meshes are named by their BodyParts3D identifier, so
@@ -29,14 +29,14 @@ export const HIDDEN_MESHES = new Set([
 ]);
 
 /** Drops the hidden meshes and any concept left with nothing to show. The
- * source atlas file is never modified; this is a view over it. */
-export function filterAtlas(atlas: Atlas): Atlas {
-  if (!HIDDEN_MESHES.size) return atlas;
-  const parts = atlas.parts.filter((part) => !HIDDEN_MESHES.has(part.id));
-  if (parts.length === atlas.parts.length) return atlas;
+ * source model file is never modified; this is a view over it. */
+export function filterModel(model: AnatomyModel): AnatomyModel {
+  if (!HIDDEN_MESHES.size) return model;
+  const parts = model.parts.filter((part) => !HIDDEN_MESHES.has(part.id));
+  if (parts.length === model.parts.length) return model;
   const kept = new Set(parts.map((part) => part.id));
-  const concepts = atlas.concepts
+  const concepts = model.concepts
     .map((concept) => ({...concept, elements: concept.elements.filter((id) => kept.has(id))}))
     .filter((concept) => concept.elements.length > 0);
-  return {...atlas, parts, concepts};
+  return {...model, parts, concepts};
 }

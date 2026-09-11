@@ -1,6 +1,6 @@
 /** Builds data/anatomy-terms-ar.json from the curated lexicon.
  *
- * Entries are keyed by the atlas concept identifier (and by mesh identifier when
+ * Entries are keyed by the model concept identifier (and by mesh identifier when
  * a mesh carries a different name from its concept), never by English text, so
  * upstream wording changes cannot silently break the mapping.
  *
@@ -114,8 +114,8 @@ export function composeArabic(rawName) {
 export const latinFor = (name) => LATIN[normalize(name)] ?? null;
 
 function main() {
-  const atlasPath = new URL('../public/models/atlas.json', import.meta.url);
-  const atlas = JSON.parse(fs.readFileSync(atlasPath));
+  const modelPath = new URL('../public/models/model.json', import.meta.url);
+  const model = JSON.parse(fs.readFileSync(modelPath));
   const terms = {};
   const missing = new Map();
 
@@ -131,15 +131,15 @@ function main() {
     if (latin) terms[id].la = latin;
   };
 
-  for (const concept of atlas.concepts) add(concept.id, concept.name);
-  const byConcept = new Map(atlas.concepts.map((c) => [c.id, c.name]));
-  for (const part of atlas.parts) {
+  for (const concept of model.concepts) add(concept.id, concept.name);
+  const byConcept = new Map(model.concepts.map((c) => [c.id, c.name]));
+  for (const part of model.parts) {
     // A mesh only needs its own row when its name differs from its concept's.
     if (byConcept.get(part.conceptId) === part.name) continue;
     add(part.id, part.name);
   }
 
-  const total = atlas.concepts.length + atlas.parts.length;
+  const total = model.concepts.length + model.parts.length;
   const output = new URL('../data/anatomy-terms-ar.json', import.meta.url);
   fs.mkdirSync(new URL('../data/', import.meta.url), {recursive: true});
   fs.writeFileSync(output, `${JSON.stringify(terms, null, 0)}\n`);

@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createExplosionLayout} from '../app/explosion-layout.ts';
 import {PointerTap} from '../app/pointer-tap.ts';
-import {atlasTools} from '../app/agent-tools.ts';
+import {modelTools} from '../app/agent-tools.ts';
 
-for (const file of ['atlas.json']) {
-  const atlas=JSON.parse(await readFile(new URL(`../public/models/${file}`,import.meta.url)));
-  const groups=[atlas.parts,...[...new Set(atlas.parts.map(p=>p.system))].map(system=>atlas.parts.filter(p=>p.system===system))];
+for (const file of ['model.json']) {
+  const model=JSON.parse(await readFile(new URL(`../public/models/${file}`,import.meta.url)));
+  const groups=[model.parts,...[...new Set(model.parts.map(p=>p.system))].map(system=>model.parts.filter(p=>p.system===system))];
   for(const group of groups) for(const aspect of [.46,1,1.7]) {
     const layout=createExplosionLayout(group,aspect),cells=[...layout.cells.values()];
     assert.equal(cells.length,group.length);
@@ -21,7 +21,7 @@ for (const file of ['atlas.json']) {
     }
   }
   let selected=null;
-  const [find,inspect]=atlasTools(atlas,c=>{selected=c;});
+  const [find,inspect]=modelTools(model,c=>{selected=c;});
   const results=find.execute({query:'femur'});
   assert.ok(results.length>0);
   inspect.execute({id:results[0].id});

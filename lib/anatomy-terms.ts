@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 
-/** One row of data/anatomy-terms-ar.json, keyed by atlas concept or mesh id. */
+/** One row of data/anatomy-terms-ar.json, keyed by model concept or mesh id. */
 export interface AnatomyTerm {
   ar?: string;
   en: string;
@@ -21,7 +21,7 @@ export function normalizeArabic(value: string): string {
     .trim();
 }
 
-/** One normalisation for every script the atlas carries. */
+/** One normalisation for every script the model carries. */
 export const normalizeTerm = (value: string) => normalizeArabic(value.toLowerCase());
 
 export interface TermLookup {

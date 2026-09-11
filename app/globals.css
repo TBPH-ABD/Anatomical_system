@@ -324,7 +324,7 @@ body:has(.search-panel) .view-controls{top:auto;bottom:200px;transform:none}
  .scene-caption{display:none}
 }
 
-/* Shown only on a phone: the atlas works there, but the model reads better on
+/* Shown only on a phone: the model works there, but it reads better on
    a larger screen, and the student is told before entering. */
 .splash-notice{display:none}
 @media(max-width:767px){

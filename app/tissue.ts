@@ -64,7 +64,7 @@ const SYSTEM_TISSUE: Record<SystemId, Tissue> = {
 };
 
 /** Name rules, first match wins. Keyed on the lowercased source name, so they
- * also correct structures the source atlas files under a broad system. */
+ * also correct structures the source model files under a broad system. */
 const RULES: [RegExp, Partial<Tissue>][] = [
   // Cardiac
   [/\b(wall of (left |right )?(atrium|ventricle))\b|myocard/, {color: '#99322c', roughness: 0.32, sheen: 0.5, translucency: 0.3, mottle: 0.45, motion: MOTION.beat, amplitude: 0.095}],

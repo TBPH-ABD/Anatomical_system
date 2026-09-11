@@ -11,7 +11,7 @@
     "build:vercel": "vite build",
     "check": "tsc --noEmit",
     "build:terms": "node scripts/build-anatomy-terms.mjs && cp data/anatomy-terms-ar.json public/data/anatomy-terms-ar.json",
-    "validate": "node scripts/validate-atlas.mjs && node scripts/validate-interactions.mjs && node scripts/validate-terms.mjs",
+    "validate": "node scripts/validate-model.mjs && node scripts/validate-interactions.mjs && node scripts/validate-terms.mjs",
     "test:explain": "node scripts/test-explain.mjs"
   },
   "dependencies": {
