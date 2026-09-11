@@ -24,7 +24,7 @@ const CARDIAC_CYCLE=.86,RESPIRATORY_CYCLE=4.3;
 const LIFE_VERTEX_HEAD=`
 attribute float partIndex;
 uniform sampler2D partState; uniform sampler2D selectionState; uniform sampler2D tissueState; uniform sampler2D vitalState; uniform sampler2D centerState;
-uniform float stateWidth; uniform float uTime; uniform float uLife;
+uniform float stateWidth; uniform float uTime; uniform float uLife; uniform float uMotion;
 varying float partVisible; varying float partSelected;
 varying vec3 vTissue; varying float vRoughness; varying float vMottle; varying float vTranslucency; varying float vSheen; varying float vFlow; varying float vBeat;
 varying vec3 vTissuePosition; varying vec3 vViewDirection;
@@ -41,7 +41,7 @@ vec4 vital = texture2D(vitalState, stateUv);
 vec4 origin = texture2D(centerState, stateUv);
 vTissue = tissue.rgb; vRoughness = tissue.a;
 vMottle = surface.r; vTranslucency = surface.g; vSheen = surface.b;
-float kind = vital.r, amplitude = vital.g * uLife;
+float kind = vital.r, amplitude = vital.g * uLife * uMotion;
 vBeat = heartBeat(uTime - vital.b); vFlow = vital.a;
 if (amplitude > 0.0001) {
   vec3 local = transformed - origin.xyz;
@@ -58,7 +58,7 @@ transformed += state.xyz;
 partVisible = state.w; partSelected = texture2D(selectionState, stateUv).r;
 `;
 const LIFE_FRAGMENT_HEAD=`
-uniform float uTime; uniform float uLife;
+uniform float uTime; uniform float uLife; uniform float uSelect;
 varying float partVisible; varying float partSelected;
 varying vec3 vTissue; varying float vRoughness; varying float vMottle; varying float vTranslucency; varying float vSheen; varying float vFlow; varying float vBeat;
 varying vec3 vTissuePosition; varying vec3 vViewDirection;
@@ -77,7 +77,7 @@ if (uLife > 0.001) {
   diffuseColor.rgb = mix(diffuseColor.rgb, vTissue, uLife);
   diffuseColor.rgb *= 1.0 + uLife * vMottle * (tissueGrain - 0.5) * 0.55;
 }
-diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.42, 0.85, 0.78), partSelected * 0.75);
+diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.42, 0.85, 0.78), partSelected * uSelect);
 `;
 const LIFE_ROUGHNESS_BODY=`
 float roughnessFactor = mix(roughness, vRoughness, uLife);
@@ -130,7 +130,7 @@ export default function AnatomyScene({atlas,state,onSelect,onProgress,onError,na
   const tissueData=new Float32Array(width*2*4),tissueTexture=new T.DataTexture(tissueData,width,2,T.RGBAFormat,T.FloatType);
   const vitalData=new Float32Array(width*4),vitalTexture=new T.DataTexture(vitalData,width,1,T.RGBAFormat,T.FloatType);
   const centerData=new Float32Array(width*4),centerTexture=new T.DataTexture(centerData,width,1,T.RGBAFormat,T.FloatType);
-  const life={uTime:{value:0},uLife:{value:0}};
+  const life={uTime:{value:0},uLife:{value:0},uMotion:{value:1},uSelect:{value:.75}};
   const materials:T.Material[]=[],geometries:T.BufferGeometry[]=[],pickers:(T.Mesh|undefined)[]=[],centers=atlas.parts.map(p=>new T.Vector3().fromArray(p.bounds[0]).add(new T.Vector3().fromArray(p.bounds[1])).multiplyScalar(.5));
   const offsets:T.Vector3[]=[],bounds=atlas.parts.map(p=>new T.Box3(new T.Vector3().fromArray(p.bounds[0]),new T.Vector3().fromArray(p.bounds[1])));
   // The pressure wave leaves the heart, so arteries pulse later the further
@@ -169,7 +169,7 @@ export default function AnatomyScene({atlas,state,onSelect,onProgress,onError,na
     shader.uniforms.partState={value:partTexture};shader.uniforms.selectionState={value:selectionTexture};shader.uniforms.stateWidth={value:width};
     shader.uniforms.tissueState={value:tissueTexture};shader.uniforms.vitalState={value:vitalTexture};shader.uniforms.centerState={value:centerTexture};
     // Shared objects: one clock and one mix drive every system's material.
-    shader.uniforms.uTime=life.uTime;shader.uniforms.uLife=life.uLife;
+    shader.uniforms.uTime=life.uTime;shader.uniforms.uLife=life.uLife;shader.uniforms.uMotion=life.uMotion;shader.uniforms.uSelect=life.uSelect;
     shader.vertexShader=LIFE_VERTEX_HEAD+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n'+LIFE_VERTEX_BODY);
     shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvViewDirection = -mvPosition.xyz;');
@@ -218,7 +218,7 @@ export default function AnatomyScene({atlas,state,onSelect,onProgress,onError,na
    controls.target.set(extent>.1&&el.clientWidth>767?-packingWidth*.12:0,extent>.1||mobile?.85:.68,0);camera.position.copy(controls.target).addScaledVector(direction,distance);controls.update();dirty=true;
   };
   if(initialCamera){camera.position.fromArray(initialCamera.position);controls.target.fromArray(initialCamera.target);controls.update();lastView=state.view;lastReset=state.reset;dirty=true;}
-  const resize=()=>{layoutKey='';lastState=null;renderer.setPixelRatio(Math.min(devicePixelRatio,el.clientWidth<768||el.clientHeight<600?1.5:2));camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix();renderer.setSize(el.clientWidth,el.clientHeight);fit(latest.current.view,amount);};const observer=new ResizeObserver(resize);observer.observe(el);
+  const resize=()=>{layoutKey='';lastState=null;lastIsolate='';renderer.setPixelRatio(Math.min(devicePixelRatio,el.clientWidth<768||el.clientHeight<600?1.5:2));camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix();renderer.setSize(el.clientWidth,el.clientHeight);fit(latest.current.view,amount);};const observer=new ResizeObserver(resize);observer.observe(el);
   const raycaster=new T.Raycaster(),pointer=new T.Vector2(),tap=new PointerTap(),worldBox=new T.Box3(),hitPoint=new T.Vector3();
   const down=(e:PointerEvent)=>{hover.hidden=true;tap.down(e.pointerId,e.clientX,e.clientY,e.pointerType==='touch'?12:5);};
   const move=(e:PointerEvent)=>{tap.move(e.pointerId,e.clientX,e.clientY);if(e.buttons||amount<.5||e.pointerType==='touch'){hover.hidden=true;return;}const rect=el.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top,index=findTarget(x,y,12);hover.hidden=index<0;renderer.domElement.style.cursor=index<0?'grab':'pointer';const label=index<0?null:(naming.current?naming.current(index):atlas.parts[index].name);if(label===null)hover.hidden=true;if(index>=0&&label!==null){hover.textContent=label;hover.style.left=`${Math.max(8,Math.min(x+14,el.clientWidth-260))}px`;hover.style.top=`${Math.max(8,Math.min(y+18,el.clientHeight-55))}px`;}};
@@ -231,14 +231,22 @@ export default function AnatomyScene({atlas,state,onSelect,onProgress,onError,na
   };
   renderer.domElement.addEventListener('pointerdown',down);renderer.domElement.addEventListener('pointermove',move);renderer.domElement.addEventListener('pointerup',up);renderer.domElement.addEventListener('pointercancel',cancel);
   invalidate.current=()=>{dirty=true;lastLabelEmit=0;};
-  const clock=new T.Clock();let lastExtent=-1,lifeMix=0;
+  const clock=new T.Clock();let lastExtent=-1,lifeMix=0,motionGain=1,selectTint=.75;
   const animate=()=>{
    if(disposed)return;frame=requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),s=latest.current;
    // A living model is never static, so it keeps asking for frames; with life
    // off the scene falls back to drawing only when something changes.
-   const lifeTarget=s.alive===false?0:1;
+   // Isolating a structure is the close look at it working, so life is always
+   // on there and its motion is exaggerated enough to read at that distance.
+   const lifeTarget=s.isolate?1:s.alive===false?0:1,motionTarget=s.isolate?1.9:1;
+   // Nothing else is on screen while isolating, so the selection tint that
+   // picks a structure out of the crowd would only hide its real colour.
+   const selectTarget=s.isolate?0:.75;
+   if(Math.abs(selectTint-selectTarget)>.001){selectTint=T.MathUtils.damp(selectTint,selectTarget,7,dt);dirty=true;}else selectTint=selectTarget;
+   life.uSelect.value=selectTint;
    if(Math.abs(lifeMix-lifeTarget)>.001){lifeMix=T.MathUtils.damp(lifeMix,lifeTarget,6,dt);dirty=true;}else lifeMix=lifeTarget;
-   life.uLife.value=lifeMix;
+   if(Math.abs(motionGain-motionTarget)>.001){motionGain=T.MathUtils.damp(motionGain,motionTarget,5,dt);dirty=true;}else motionGain=motionTarget;
+   life.uLife.value=lifeMix;life.uMotion.value=motionGain;
    if(lifeMix>.001){life.uTime.value+=dt;dirty=true;}
    const changed=lastState?.visible!==s.visible||lastState?.selected!==s.selected||lastState?.isolate!==s.isolate;
    const moving=Math.abs(amount-s.explode)>.0001;

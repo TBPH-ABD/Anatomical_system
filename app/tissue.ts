@@ -69,7 +69,7 @@ const RULES: [RegExp, Partial<Tissue>][] = [
   // Cardiac
   [/\b(wall of (left |right )?(atrium|ventricle))\b|myocard/, {color: '#99322c', roughness: 0.32, sheen: 0.5, translucency: 0.3, mottle: 0.45, motion: MOTION.beat, amplitude: 0.095}],
   [/cavity of (left|right) (atrium|ventricle)/, {color: '#8e201f', roughness: 0.22, sheen: 0.6, translucency: 0.5, mottle: 0.2, motion: MOTION.beat, amplitude: 0.1, flow: 0.45}],
-  [/(cusp|leaflet) of .*(valve)|valve\b/, {color: '#e8ded0', roughness: 0.2, sheen: 0.7, translucency: 0.65, mottle: 0.12, motion: MOTION.beat, amplitude: 0.13}],
+  [/(cusp|leaflet) of .*(valve)|valve\b/, {color: '#dccdb6', roughness: 0.26, sheen: 0.6, translucency: 0.55, mottle: 0.16, motion: MOTION.beat, amplitude: 0.13}],
   // Brain and nerves
   [/(ventricle|interventricular foramen|central canal|choroid plexus|cerebrospinal)/, {color: '#cfd8dc', roughness: 0.18, sheen: 0.66, translucency: 0.6, mottle: 0.15, motion: MOTION.csf, amplitude: 0.012, flow: 0.22}],
   [/(gyrus|sulcus|lobe of (cerebrum|brain)|cerebral cortex|occipital lobe|temporal lobe|frontal lobe|parietal lobe|insula)/, {color: '#c6aba6', roughness: 0.4, sheen: 0.34, translucency: 0.3, mottle: 0.5, motion: MOTION.csf, amplitude: 0.008}],

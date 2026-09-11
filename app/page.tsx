@@ -30,6 +30,7 @@ import {Sheet, SheetContent, SheetTitle, SheetDescription} from '@/components/ui
 import {Combobox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem, ComboboxEmpty} from '@/components/ui/combobox';
 import AnatomyScene, {type SceneLabel} from './scene';
 import {DEFAULT_VISIBLE, SYSTEMS, type Atlas, type Concept, type SceneState, type SystemId, type View} from './anatomy';
+import {MOTION, tissueFor} from './tissue';
 import {useI18n} from '@/lib/i18n';
 import type {MessageKey} from '@/lib/i18n';
 import {normalizeTerm, useAnatomyTerms} from '@/lib/anatomy-terms';
@@ -339,6 +340,14 @@ export default function Home() {
   const title = chosen ? conceptName(chosen) : '';
   const englishTitle = chosen?.name ?? '';
   const latin = chosen ? terms.latin(chosen.id) : undefined;
+  /** What the selected structure is doing while it is isolated on screen. */
+  const activity = useMemo(() => {
+    if (!selected) return null;
+    const motion = tissueFor(selected.name, selected.system).motion;
+    const key = (Object.keys(MOTION) as (keyof typeof MOTION)[]).find((name) => MOTION[name] === motion);
+    return !key || key === 'still' ? null : t(`activity.${key}` as MessageKey);
+  }, [selected, t]);
+
   const megabytes = (value: number) => (value / 1e6).toFixed(1);
 
   return (
@@ -751,6 +760,15 @@ export default function Home() {
               {chosen && selected ? explanationFor(chosen.name, selected.system) : ''}
             </SheetDescription>
             {chosen && !hasExplanation(chosen.name) && <span className="context-note">{t('detail.contextNote')}</span>}
+            {activity && (
+              <div className="vital-state">
+                <span className="vital-pulse" aria-hidden="true" />
+                <div>
+                  <b>{t('activity.heading')}</b>
+                  {activity}
+                </div>
+              </div>
+            )}
             <div className="structure-meta">
               <span>
                 {t('detail.selectedPieces')}

@@ -34,6 +34,16 @@ export const en = {
     on: 'Living tissue: on. Structures carry their real colours and move with the heartbeat and breathing.',
     off: 'Living tissue: off. Structures carry flat teaching colours and stand still.',
   },
+  activity: {
+    heading: 'Working now',
+    beat: 'Contracting and relaxing about 70 times a minute, on a full cardiac cycle.',
+    breathe: 'Widening with every breath in, about 14 times a minute.',
+    descend: 'Descending and flattening on inspiration, then rising again.',
+    arterial: 'Carrying the pressure wave that leaves the heart with every beat.',
+    venous: 'Returning blood toward the heart in a slow, steady flow.',
+    peristalsis: 'Running a ring of contraction along its length to move its contents on.',
+    csf: 'Pulsing faintly with the cerebrospinal fluid around it.',
+  },
   systemsPanel: {
     heading: 'Systems',
     closeAria: 'Close systems',
